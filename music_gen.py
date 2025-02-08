@@ -555,7 +555,7 @@ def generate_lilypond_score_with_brace(intro_notes_4tuple, right_notes_4tuple, c
     # 3) 拼装 LilyPond 文件内容
     lilypond_content = f"""\\version "2.24.1"
         \\header {{
-        title = "Sheet Music"
+        % title = "Sheet Music"
         % composer = "Yao."
         }}
 

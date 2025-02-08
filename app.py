@@ -69,10 +69,13 @@ def upload_file():
 
     if os.path.exists(output_subdir):
         for f in sorted(os.listdir(output_subdir)):
+            print(f)
             if f.lower().endswith(".png"):
                 png_files.append(f)
             elif f.lower().endswith(".mp3"):
                 mp3_files.append(f)
+    print(png_files)
+    print(mp3_files)
 
     # ---------------------------------------
     # 2. 把本地文件名, 转换为 "可访问" 的 URL

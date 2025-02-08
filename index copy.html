@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>上传图片并显示预览</title>
+  <style>
+    /* 隐藏文件输入框：采用绝对定位移出视口 */
+    #imageUpload {
+      position: absolute;
+      left: -9999px;
+    }
+
+    /* 自定义文件选择按钮 */
+    .custom-file-upload {
+      display: inline-block;
+      padding: 10px 20px;
+      cursor: pointer;
+      border: 2px solid #007BFF;
+      border-radius: 8px;
+      background-color: #007BFF;
+      color: #fff;
+      font-size: 16px;
+      transition: background-color 0.3s, border-color 0.3s;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+    }
+    .custom-file-upload:hover {
+      background-color: #0056b3;
+      border-color: #0056b3;
+    }
+
+    /* 上传按钮样式 */
+    .upload-btn {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 20px;
+      cursor: pointer;
+      border: 2px solid #28A745;
+      border-radius: 8px;
+      background-color: #28A745;
+      color: #fff;
+      font-size: 16px;
+      transition: background-color 0.3s, border-color 0.3s;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+    }
+    .upload-btn:hover {
+      background-color: #218838;
+      border-color: #218838;
+    }
+
+    /* 预览区域样式 */
+    #previewArea {
+      margin-top: 20px;
+      text-align: center;
+    }
+    #previewArea p {
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    #previewArea img {
+      width: 100px;
+      height: auto;
+      border-radius: 4px;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+  <!-- 自定义文件选择按钮（点击后会触发隐藏的 input:file） -->
+  <label for="imageUpload" class="custom-file-upload">
+    选择图片
+  </label>
+  <!-- 隐藏的文件输入框 -->
+  <input type="file" id="imageUpload" accept="image/*" />
+
+  <!-- 上传按钮 -->
+  <button id="uploadBtn" class="upload-btn">上传图片</button>
+
+  <!-- 预览区域 -->
+  <div id="previewArea"></div>
+
+  <script>
+    const imageUpload = document.getElementById("imageUpload");
+    const uploadBtn = document.getElementById("uploadBtn");
+    const previewArea = document.getElementById("previewArea");
+
+    // 当选择文件后，在控制台输出文件信息，方便调试
+    imageUpload.addEventListener("change", function() {
+      if (this.files && this.files[0]) {
+        console.log("已选择文件：", this.files[0]);
+      }
+    });
+
+    // 上传按钮点击事件
+    uploadBtn.addEventListener("click", async () => {
+      // 如果没有选择文件，则提示
+      if (!imageUpload.files[0]) {
+        alert("请先选择一张图片！");
+        return;
+      }
+
+      console.log("开始上传文件：", imageUpload.files[0]);
+
+      // 模拟上传操作：构造 FormData 对象（实际上传时可以用 fetch 等方法发送到后端）
+      const formData = new FormData();
+      formData.append("file", imageUpload.files[0]);
+
+      // 清空预览区域
+      previewArea.innerHTML = "";
+
+      // 显示上传成功的提示文字
+      const message = document.createElement("p");
+      message.textContent = "图片已上传！";
+      previewArea.appendChild(message);
+
+      // 显示预览图片
+      const img = document.createElement("img");
+      // 生成一个临时的 URL 用于显示图片预览
+      img.src = URL.createObjectURL(imageUpload.files[0]);
+      previewArea.appendChild(img);
+
+      // 当图片加载完成后，释放该 URL 对象占用的内存
+      img.onload = () => {
+        URL.revokeObjectURL(img.src);
+      };
+
+      console.log("上传并显示预览完成");
+    });
+  </script>
+</body>
+</html>
