@@ -17,7 +17,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . /app
 
 # 暴露端口（Railway 会自动设置端口环境变量，这里只是说明）
-EXPOSE 5001
+EXPOSE 5000
 
 # 启动命令，注意这里使用 python3 来确保使用正确的解释器
 CMD ["python3", "app.py"]

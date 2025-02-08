@@ -6,7 +6,8 @@ import uuid
 import subprocess
 
 app = Flask(__name__)
-CORS(app)
+# 允许所有来源访问所有路由
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 UPLOAD_FOLDER = 'figures'
 OUTPUT_FOLDER = 'outputs'
