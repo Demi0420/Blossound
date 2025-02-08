@@ -17,7 +17,7 @@ def from_midi_to_mp3(image_name):
     wav_file = os.path.join(image_name.replace(".midi", ".wav"))
     subprocess.run([
         "fluidsynth",
-        "-ni", "FluidR3_GM/FluidR3_GM.sf2",  # 指定 SoundFont 文件
+        "-ni", "/usr/share/sounds/sf2/FluidR3_GM.sf2",  # 指定 SoundFont 文件
         midi_file,
         "-F", wav_file,
         "-r", "44100"
@@ -28,8 +28,8 @@ def from_midi_to_mp3(image_name):
     mp3_file = os.path.join(image_name.replace(".midi", ".mp3"))
     subprocess.run([
         "ffmpeg",
-        "-y",               # 如已有同名文件则覆盖
-        "-i", wav_file,     # 输入 WAV 文件
+        "-y",              
+        "-i", wav_file, 
         "-acodec", "libmp3lame",
         mp3_file
     ], check=True)
@@ -55,7 +55,7 @@ def main():
     filename = os.path.basename(image_path)
     # 使用 os.path.splitext 分离扩展名，得到 "IMG_8148"
     image_name, _ = os.path.splitext(filename)
-    
+
 
     # 读图 & resize
     image = cv2.imread(image_path)

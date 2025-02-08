@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y \
     lilypond \
     fluidsynth \
     fluid-soundfont-gm \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 
