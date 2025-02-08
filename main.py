@@ -70,6 +70,7 @@ def main():
     # 构造输出目录: outputs/<unique_id>/<image_name>/
     out_dir = os.path.join("outputs", unique_id, image_name)
     os.makedirs(out_dir, exist_ok=True)
+    abs_out_dir = os.path.abspath(out_dir)
 
     target_height = 500
     ratio = target_height / image.shape[0]
@@ -168,8 +169,8 @@ def main():
     # 4) 生成 LilyPond
     # ly_filename = os.path.join("outputs", image_name, os.path.splitext(os.path.basename(image_path))[0] + "-score.ly")
     # LilyPond 文件 => outputs/<unique_id>/<image_name>-score.ly
-    # ly_filename = os.path.join(out_dir, f"{image_name}-score.ly")
-    ly_filename = f"{image_name}-score.ly"
+    ly_filename = os.path.join(abs_out_dir, f"{image_name}-score.ly")
+    # ly_filename = f"{image_name}-score.ly"
     generate_lilypond_score_with_brace(intro_measures, 
                                        grouped_basic_notes, 
                                        coda_measures, 
@@ -180,8 +181,8 @@ def main():
                 
 
     # 5) 调用 LilyPond 和 ImageMagick
-    # output_base = os.path.join(out_dir, f"{image_name}-score")  # e.g. outputs/<unique_id>/IMG_8148-score
-    output_base = f"{image_name}-score"
+    output_base = os.path.join(abs_out_dir, f"{image_name}-score")  # e.g. outputs/<unique_id>/IMG_8148-score
+    # output_base = f"{image_name}-score"
     subprocess.run([
         "lilypond",
         "-o", output_base,     # 输出基名
@@ -203,8 +204,8 @@ def main():
     ],check=True)
 
 
-    # ly_filename_new = os.path.join(out_dir, f"{image_name}-score-new.ly")
-    ly_filename_new = f"{image_name}-score-new.ly"
+    ly_filename_new = os.path.join(abs_out_dir, f"{image_name}-score-new.ly")
+    # ly_filename_new = f"{image_name}-score-new.ly"
     generate_lilypond_score_with_brace(intro_measures, 
                                        grouped_basic_notes, 
                                        coda_measures, 
@@ -214,8 +215,8 @@ def main():
                                        filename=ly_filename_new)
                 
 
-    # output_base_new = os.path.join(out_dir, f"{image_name}-score-new") 
-    output_base_new = f"{image_name}-score-new"
+    output_base_new = os.path.join(abs_out_dir, f"{image_name}-score-new") 
+    # output_base_new = f"{image_name}-score-new"
     subprocess.run([
         "lilypond",
         "-o", output_base_new,     
