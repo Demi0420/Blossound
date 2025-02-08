@@ -22,20 +22,36 @@
     }
   </style>
 </head>
-<body>
-  <h1>Blossound</h1>
+<h1>Blossound</h1>
   <input type="file" id="imageUpload" accept="image/*" />
   <button id="uploadBtn">Start Convert</button>
   
+  <!-- 用于显示处理状态 -->
   <div id="resultSection"></div>
+  
+  <!-- 按钮区域，初始隐藏 -->
+  <div id="buttonSection" style="display: none;">
+    <p>已成功生成，请选择显示哪一组：</p>
+    <button id="btnSet1">第一组</button>
+    <button id="btnSet2">第二组</button>
+  </div>
+  
+  <!-- 显示选中结果的区域 -->
+  <div id="displaySection"></div>
 
   <script>
     const uploadBtn = document.getElementById("uploadBtn");
     const imageUpload = document.getElementById("imageUpload");
     const resultSection = document.getElementById("resultSection");
+    const buttonSection = document.getElementById("buttonSection");
+    const displaySection = document.getElementById("displaySection");
 
-    // 你的后端在 Railway 部署成功后的域名
+    // 后端部署的域名
     const BACKEND_URL = "https://blossound-production.up.railway.app";
+
+    // 全局变量存储返回的文件 URL 数组
+    let pngFiles = [];
+    let mp3Files = [];
 
     uploadBtn.addEventListener("click", async () => {
       if (!imageUpload.files[0]) {
@@ -49,6 +65,8 @@
 
       // 显示“加载中”
       resultSection.innerHTML = "正在处理，请稍后...";
+      buttonSection.style.display = "none";
+      displaySection.innerHTML = "";
 
       try {
         const response = await fetch(`${BACKEND_URL}/upload`, {
@@ -58,27 +76,16 @@
         const data = await response.json();
 
         if (data.success) {
-          resultSection.innerHTML = ""; // 清空加载文字
+          // 显示成功提示
+          resultSection.innerHTML = "已成功生成！";
+          
+          // 保存返回的文件 URL 数组
+          // 后端返回的字段名为 pngFiles 和 mp3Files，都是数组
+          pngFiles = data.pngFiles;
+          mp3Files = data.mp3Files;
 
-          // 显示 PNG
-          data.pngFiles.forEach((pngPath) => {
-            // 需要注意：目前后端只是返回了文件路径，还未提供真正的 URL
-            // 你可以在后端改造一下，让它返回可以访问的 URL
-            // 这里先假设你有一个 /files/<unique_id>/xxx.png 路由
-            const img = document.createElement("img");
-            img.src = pngPath; 
-            img.className = "preview-image";
-            resultSection.appendChild(img);
-          });
-
-          // 显示 MP3
-          if (data.mp3File) {
-            const audio = document.createElement("audio");
-            audio.controls = true;
-            audio.className = "preview-audio";
-            audio.src = data.mp3File;
-            resultSection.appendChild(audio);
-          }
+          // 显示按钮区域
+          buttonSection.style.display = "block";
         } else {
           resultSection.innerHTML = "处理失败：" + (data.error || "请查看后端日志");
         }
@@ -87,6 +94,34 @@
         resultSection.innerHTML = "请求失败，无法连接后端。";
       }
     });
+
+    // 绑定按钮事件
+    document.getElementById("btnSet1").addEventListener("click", () => {
+      displaySet(0);
+    });
+
+    document.getElementById("btnSet2").addEventListener("click", () => {
+      displaySet(1);
+    });
+
+    // 根据索引显示对应的 PNG 和 MP3 文件
+    function displaySet(index) {
+      displaySection.innerHTML = ""; // 清空之前的内容
+
+      if (pngFiles[index]) {
+        const img = document.createElement("img");
+        img.src = pngFiles[index];
+        img.className = "preview-image";
+        displaySection.appendChild(img);
+      }
+      if (mp3Files[index]) {
+        const audio = document.createElement("audio");
+        audio.controls = true;
+        audio.src = mp3Files[index];
+        audio.className = "preview-audio";
+        displaySection.appendChild(audio);
+      }
+    }
   </script>
 </body>
 </html>

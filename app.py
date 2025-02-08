@@ -16,14 +16,11 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 # ---------------------------------------
 # 1. 新增用于提供静态文件访问的路由
-# /outputs/<unique_id>/<filename> => 读取 outputs/unique_id/filename 并返回
-@app.route("/outputs/<unique_id>/<filename>")
-def serve_output_file(unique_id, filename):
-    """
-    这个路由专门用来返回某个 unique_id 子目录下的文件
-    """
+# 新的静态文件路由：用于访问 outputs/<unique_id>/<image_name>/<filename>
+@app.route("/outputs/<unique_id>/<image_name>/<filename>")
+def serve_output_file(unique_id, image_name, filename):
     return send_from_directory(
-        directory=os.path.join(OUTPUT_FOLDER, unique_id),
+        directory=os.path.join(OUTPUT_FOLDER, unique_id, image_name),
         path=filename
     )
 # ---------------------------------------
@@ -38,21 +35,24 @@ def index():
 def upload_file():
     if 'file' not in request.files:
         return jsonify({"success": False, "error": "No file part"})
-    
     file = request.files['file']
     if file.filename == '':
         return jsonify({"success": False, "error": "No selected file"})
 
     # 生成 unique_id, 用于隔离不同用户/不同次上传的数据
     unique_id = str(uuid.uuid4())
+    # 对上传的文件名进行安全处理，并提取 image_name（不带扩展名）
+    orig_filename = secure_filename(file.filename)
+    image_name, _ = os.path.splitext(orig_filename)
+
+    # 构造上传目录和输出目录，输出目录为 outputs/<unique_id>/<image_name>/
     upload_subdir = os.path.join(UPLOAD_FOLDER, unique_id)
-    output_subdir = os.path.join(OUTPUT_FOLDER, unique_id)
+    output_subdir = os.path.join(OUTPUT_FOLDER, unique_id, image_name)
     os.makedirs(upload_subdir, exist_ok=True)
     os.makedirs(output_subdir, exist_ok=True)
 
-    # 保存上传的文件
-    filename = secure_filename(file.filename)
-    input_path = os.path.join(upload_subdir, filename)
+    # 保存上传的图片文件
+    input_path = os.path.join(upload_subdir, orig_filename)
     file.save(input_path)
 
     # 调用你的 main.py, 例如: python main.py figures/<unique_id>/<filename>
@@ -65,38 +65,28 @@ def upload_file():
     # 现在 main.py 应该会在 output_subdir 中输出结果
     # 比如 XXX-score-new.png / -0.png / -1.png / .mp3 等
     png_files = []
-    mp3_file = None
+    mp3_files = []
 
     if os.path.exists(output_subdir):
         for f in sorted(os.listdir(output_subdir)):
-            # 构造文件的完整路径
-            fpath = os.path.join(output_subdir, f)
-            # 判断后缀
-            if f.endswith(".png"):
+            if f.lower().endswith(".png"):
                 png_files.append(f)
-            elif f.endswith(".mp3"):
-                mp3_file = f
+            elif f.lower().endswith(".mp3"):
+                mp3_files.append(f)
 
     # ---------------------------------------
     # 2. 把本地文件名, 转换为 "可访问" 的 URL
     #    例如: https://your-backend.up.railway.app/outputs/<unique_id>/<filename>
-    base_url = request.host_url  # eg. "https://xxx.up.railway.app/"
-
-    png_file_urls = []
-    for fname in png_files:
-        # fname 是文件名, 构造成 /outputs/<unique_id>/<fname>
-        file_url = f"{base_url}outputs/{unique_id}/{fname}"
-        png_file_urls.append(file_url)
-
-    mp3_file_url = None
-    if mp3_file:
-        mp3_file_url = f"{base_url}outputs/{unique_id}/{mp3_file}"
-    # ---------------------------------------
+    # 构造可访问的 URL。使用 request.host_url（如 "https://blossound-production.up.railway.app/"）
+    # 结合新的静态文件路由： /outputs/<unique_id>/<image_name>/<filename>
+    base_url = request.host_url
+    png_file_urls = [f"{base_url}outputs/{unique_id}/{image_name}/{fname}" for fname in png_files]
+    mp3_file_urls = [f"{base_url}outputs/{unique_id}/{image_name}/{fname}" for fname in mp3_files]
 
     return jsonify({
         "success": True,
         "pngFiles": png_file_urls,
-        "mp3File": mp3_file_url
+        "mp3Files": mp3_file_urls
     })
 
 
