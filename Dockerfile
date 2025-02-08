@@ -1,5 +1,3 @@
-web: python app.py
-web: pip install setuptools && gunicorn -w 1 -b 0.0.0.0:5001 app:app
 # 使用官方的 Python 3.9 slim 版本作为基础镜像
 FROM python:3.9-slim
 
