@@ -1,0 +1,7 @@
+Flask==2.2.3
+Werkzeug==2.2.3
+opencv-python==4.7.0.72
+numpy==1.23.5
+colormath==3.0.0
+scikit-image==0.20.0
+scikit-learn==1.2.2
