@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     libglib2.0-0 \
     lilypond \
+    fluidsynth \
     && rm -rf /var/lib/apt/lists/*
 
 # 设置工作目录
