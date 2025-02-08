@@ -58,8 +58,8 @@ def upload_file():
     try:
         subprocess.check_call(["python3", "main.py", input_path])
     except subprocess.CalledProcessError as e:
-        print(e)
-        return jsonify({"success": False, "error": "Processing failed"})
+        print("Error executing main.py:", e)
+        return jsonify({"success": False, "error": "Processing failed: " + str(e)})
 
     # 现在 main.py 应该会在 output_subdir 中输出结果
     # 比如 XXX-score-new.png / -0.png / -1.png / .mp3 等
