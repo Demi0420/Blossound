@@ -195,7 +195,7 @@ def generate_lilypond_single_staff(measures_4tuple, octave, output_filename="sco
 
     # 拼 LilyPond 文件内容
     lilypond_content = f"""
-        \\version "2.22.1"
+        \\version "2.24.1"
         \\header {{
         title = "Single Staff Score"
         composer = "Test"
@@ -553,11 +553,10 @@ def generate_lilypond_score_with_brace(intro_notes_4tuple, right_notes_4tuple, c
     # left_lily_str += " \\bar \"|.\""
     
     # 3) 拼装 LilyPond 文件内容
-    lilypond_content = f"""
-        \\version "2.22.1"
+    lilypond_content = f"""\\version "2.24.1"
         \\header {{
         title = "Sheet Music"
-        composer = "Yao."
+        % composer = "Yao."
         }}
 
         \\score {{
