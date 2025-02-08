@@ -196,7 +196,7 @@ def main():
     pdf_file = output_base + ".pdf"
     png_file = output_base + ".png"
     subprocess.run(
-        ["magick", 
+        ["convert", 
         "-density", "300", 
         pdf_file, 
         png_file
@@ -229,7 +229,7 @@ def main():
     pdf_file_new = output_base_new + ".pdf"
     png_file_new = output_base_new + ".png"
     subprocess.run(
-        ["magick", 
+        ["convert", 
         "-density", "300", 
         pdf_file_new, 
         png_file_new
