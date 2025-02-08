@@ -56,7 +56,7 @@ def upload_file():
 
     # 调用你的 main.py, 例如: python main.py figures/<unique_id>/<filename>
     try:
-        subprocess.check_call(["python", "main.py", input_path])
+        subprocess.check_call(["python3", "main.py", input_path])
     except subprocess.CalledProcessError as e:
         print(e)
         return jsonify({"success": False, "error": "Processing failed"})
@@ -101,4 +101,5 @@ def upload_file():
 
 if __name__ == "__main__":
     # 你可以使用 5000 或其他端口
-    app.run(debug=True, host="0.0.0.0", port=5001)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=True, host="0.0.0.0", port=port)
