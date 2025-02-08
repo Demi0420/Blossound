@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Image to Score</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+    }
+    .preview-image {
+      max-width: 300px;
+      display: block;
+      margin-bottom: 10px;
+    }
+    .preview-audio {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>上传图片 - 生成谱面</h1>
+  <input type="file" id="imageUpload" accept="image/*" />
+  <button id="uploadBtn">开始转换</button>
+  
+  <div id="resultSection"></div>
+
+  <script>
+    const uploadBtn = document.getElementById("uploadBtn");
+    const imageUpload = document.getElementById("imageUpload");
+    const resultSection = document.getElementById("resultSection");
+
+    // 你的后端在 Railway 部署成功后的域名
+    const BACKEND_URL = "https://blossound-production.up.railway.app";
+
+    uploadBtn.addEventListener("click", async () => {
+      if (!imageUpload.files[0]) {
+        alert("请先选择一张图片！");
+        return;
+      }
+
+      // 创建表单数据
+      const formData = new FormData();
+      formData.append("file", imageUpload.files[0]);
+
+      // 显示“加载中”
+      resultSection.innerHTML = "正在处理，请稍后...";
+
+      try {
+        const response = await fetch(`${BACKEND_URL}/upload`, {
+          method: "POST",
+          body: formData
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          resultSection.innerHTML = ""; // 清空加载文字
+
+          // 显示 PNG
+          data.pngFiles.forEach((pngPath) => {
+            // 需要注意：目前后端只是返回了文件路径，还未提供真正的 URL
+            // 你可以在后端改造一下，让它返回可以访问的 URL
+            // 这里先假设你有一个 /files/<unique_id>/xxx.png 路由
+            const img = document.createElement("img");
+            img.src = pngPath; 
+            img.className = "preview-image";
+            resultSection.appendChild(img);
+          });
+
+          // 显示 MP3
+          if (data.mp3File) {
+            const audio = document.createElement("audio");
+            audio.controls = true;
+            audio.className = "preview-audio";
+            audio.src = data.mp3File;
+            resultSection.appendChild(audio);
+          }
+        } else {
+          resultSection.innerHTML = "处理失败：" + (data.error || "请查看后端日志");
+        }
+      } catch (error) {
+        console.error("请求错误", error);
+        resultSection.innerHTML = "请求失败，无法连接后端。";
+      }
+    });
+  </script>
+</body>
+</html>
