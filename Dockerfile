@@ -6,11 +6,10 @@ RUN apt-get update && apt-get install -y \
     lilypond \
     fluidsynth \
     fluid-soundfont-gm \
+    imagemagick \
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-
-RUN find /usr/share -name "FluidR3_GM.sf2"
 
 WORKDIR /app
 
