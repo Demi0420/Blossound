@@ -1,7 +1,7 @@
 # main.py
 import os
 import sys
-import cv2
+import cv2 # type: ignore
 import subprocess
 import itertools
 from config import COLOR_TONE_DICT, COLOR_TO_TONE_MAP, TONE_TO_SCALE, COLOR_MAP, BASIC_OCTAVE, LEFT_OCTAVE
@@ -37,14 +37,25 @@ def from_midi_to_mp3(image_name):
 
 
 def main():
-    if len(sys.argv)<2:
-        print("用法: python main.py <image_path>")
+    if len(sys.argv) < 2:
+        print("用法: python3 main.py <image_path>")
         sys.exit(1)
     
     image_path = sys.argv[1]
     if not os.path.isfile(image_path):
         print(f"图像文件不存在: {image_path}")
         sys.exit(1)
+    
+    # 读取图像
+    image = cv2.imread(image_path)
+    if image is None:
+        raise ValueError("无法读取图像，请检查路径。")
+    
+    # 使用 os.path.basename 获取文件名，如 "IMG_8148.jpg"
+    filename = os.path.basename(image_path)
+    # 使用 os.path.splitext 分离扩展名，得到 "IMG_8148"
+    image_name, _ = os.path.splitext(filename)
+    
 
     # 读图 & resize
     image = cv2.imread(image_path)

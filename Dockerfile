@@ -1,23 +1,25 @@
-# 使用官方的 Python 3.9 slim 版本作为基础镜像
+# 使用官方 Python 3.9 slim 作为基础镜像
 FROM python:3.9-slim
 
-# 安装系统依赖，包括 libGL.so.1 所需的包
+# 更新 apt-get 并安装必要的系统依赖：libgl1-mesa-glx（解决 OpenCV 的 libGL 问题）
+# 以及 libglib2.0-0（提供 libgthread-2.0.so.0）
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
+    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # 设置工作目录
 WORKDIR /app
 
-# 将 requirements.txt 拷贝到工作目录，并安装 Python 依赖
+# 将 requirements.txt 复制到工作目录，并安装 Python 依赖
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# 将当前项目的所有文件复制到容器的 /app 目录中
+# 复制项目所有文件到容器内
 COPY . /app
 
-# 暴露端口（Railway 会自动设置端口环境变量，这里只是说明）
+# 暴露端口（此处仅作说明，实际端口由 Railway 环境变量控制）
 EXPOSE 8080
 
-# 启动命令，注意这里使用 python3 来确保使用正确的解释器
+# 使用环境变量 PORT 启动应用
 CMD ["python3", "app.py"]
