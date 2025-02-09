@@ -231,11 +231,20 @@
       max-width: 400px;
     }
     /* 针对屏幕宽度较小的设备进行调整 */
-    @media (max-width: 767px) {
+    @media only screen and (max-width: 800px) {
       body {
         font-size: 18px; /* 增大整体文字大小 */
       }
-      .btn, .custom-file-upload {
+      .modal-content {
+        width: calc(100vw - 100px); /* 手机屏幕宽度减去100px */
+        height: auto; /* 如有需要可以调整高度 */
+      }
+      .btn {
+        font-size: 18px;      /* 增大按钮内文字 */
+        padding: 14px 24px;   /* 增加按钮的内边距 */
+        margin: 10px 20px;    /* 调整按钮的外边距 */
+      }
+      .cucustom-file-upload {
         font-size: 18px;      /* 增大按钮内文字 */
         padding: 14px 24px;   /* 增加按钮的内边距 */
         margin: 10px 20px;    /* 调整按钮的外边距 */
