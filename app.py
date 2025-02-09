@@ -74,6 +74,12 @@ def upload_file():
                 png_files.append(f)
             elif f.lower().endswith(".mp3"):
                 mp3_files.append(f)
+    groups = {}
+    for filename in png_files:
+        prefix = filename.rsplit('-', 1)[0]
+        groups.setdefault(prefix, []).append(filename)
+
+    grouped_list = list(groups.values())
     print(png_files)
     print(mp3_files)
 
@@ -83,7 +89,11 @@ def upload_file():
     # 构造可访问的 URL。使用 request.host_url（如 "https://blossound-production.up.railway.app/"）
     # 结合新的静态文件路由： /outputs/<unique_id>/<image_name>/<filename>
     base_url = request.host_url
-    png_file_urls = [f"{base_url}outputs/{unique_id}/{image_name}/{fname}" for fname in png_files]
+    # png_file_urls = [f"{base_url}outputs/{unique_id}/{image_name}/{fname}" for fname in png_files]
+    png_file_urls = [
+        [f"{base_url}outputs/{unique_id}/{image_name}/{fname}" for fname in group]
+        for group in grouped_list
+    ]
     mp3_file_urls = [f"{base_url}outputs/{unique_id}/{image_name}/{fname}" for fname in mp3_files]
 
     return jsonify({
