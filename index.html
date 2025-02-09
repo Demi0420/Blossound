@@ -229,6 +229,10 @@
     @media only screen and (max-width: 800px) {
       body {
         font-size: 18px; /* 增大整体文字大小 */
+        margin: 0;
+      }
+      .wrapper {
+        min-height: 100vh;
       }
       .modal-content {
         width: calc(100vw - 100px); /* 手机屏幕宽度减去100px */
@@ -240,8 +244,20 @@
       .custom-file-upload {
         margin: 10px 20px;    /* 调整按钮的外边距 */
       }
+      .image-container {
+        justify-content: flex-start; /* 屏幕较窄时，从左侧排列 */
+      }
       .image-container img {
         width: calc(100vw - 50px);
+      }
+      footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        /* 如果需要，可以添加额外的背景颜色和内边距，确保页脚内容清晰 */
+        background-color: #fff;
+        z-index: 100;
       }
     }
   </style>
