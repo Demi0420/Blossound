@@ -2,6 +2,7 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Blossound</title>
   <style>
     /* 全局样式 */
@@ -228,6 +229,17 @@
       margin-top: 10px;
       width: 90%;
       max-width: 400px;
+    }
+    /* 针对屏幕宽度较小的设备进行调整 */
+    @media (max-width: 767px) {
+      body {
+        font-size: 18px; /* 增大整体文字大小 */
+      }
+      .btn, .custom-file-upload {
+        font-size: 18px;      /* 增大按钮内文字 */
+        padding: 14px 24px;   /* 增加按钮的内边距 */
+        margin: 10px 20px;    /* 调整按钮的外边距 */
+      }
     }
   </style>
 </head>
@@ -488,9 +500,9 @@
         displaySection.appendChild(audio);
       }
 
-      if (pngFiles[index]) {
+      if (pngFiles[1-index]) {
         // 判断当前组是否为数组，如果不是则转为数组方便统一处理
-        const images = Array.isArray(pngFiles[index]) ? pngFiles[index] : [pngFiles[index]];
+        const images = Array.isArray(pngFiles[1-index]) ? pngFiles[1-index] : [pngFiles[1-index]];
         const img = document.createElement("img");
         // 创建图片容器（横向滚动）
         const container = document.createElement("div");
