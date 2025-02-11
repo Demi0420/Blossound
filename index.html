@@ -276,11 +276,23 @@
       .image-container img {
         width: calc(100vw - 50px);
       }
+      #sidebar {
+        height: calc(100vh - 40px);
+        padding-bottom: 20px;  /* 减少内边距 */
+        /* 如果内容太多，也可以添加滚动条 */
+        overflow-y: auto;
+      }
+      /* 调整底部导航的外边距 */
+      .nav-bottom {
+        margin-top: auto;  /* 保持推到底部 */
+        margin-bottom: 20px;  /* 减少底部留白 */
+      }
       footer {
         position: fixed;
         bottom: 0;
         left: 0;
         width: 100%;
+        background-color: #fff;
         z-index: 100;
       }
     }
