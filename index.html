@@ -32,17 +32,43 @@
     /* 导航侧边栏样式 */
     #sidebar {
       font-family: 'Avenir';
-      height: 100%;
+      height: calc(100vh - 40px);
       width: 250px;
       position: fixed;
-      left: -250px;
+      left: -270px;
       top: 0;
       background-color: #434343;
       overflow-x: hidden;
       transition: 0.5s;
       padding-top: 60px;
       z-index: 2;
+      display: flex;
+      flex-direction: column;
       box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+      padding-bottom: 60px;  /* 例如底部再增加40px内边距 */
+    }
+    /* 上半部分导航 */
+    .nav-top ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    /* 下半部分导航 */
+    .nav-bottom {
+      margin-top: auto;  /* 将 nav-bottom 推到最底部 */
+      margin-bottom: 60px;  /* 在底部再留出20px的间距 */
+    }
+
+    .nav-bottom ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    /* 设置 contact 项的字体较小 */
+    .nav-bottom ul li.contact a {
+      font-size: 0.7em;  /* 例如 70% 的默认字号 */
     }
     #sidebar ul {
       list-style-type: none;
@@ -267,12 +293,20 @@
   <!-- 侧边栏 -->
   <div id="sidebar">
     <button id="closeSidebar">&times;</button>
-    <ul>
-      <li><a href="#" id="nav-top">TOP</a></li>
-      <li class="contact"><a href="#" id="nav-contact">Contact Us</a></li>
-      <li><a href="#" id="nav-faq">FAQ</a></li>
-      <li><a href="#" id="nav-future">Future Visions</a></li>
-    </ul>
+    <div class="nav-top">
+      <ul>
+        <li><a href="#" id="nav-top">TOP</a></li>
+        <li><a href="index.html" id="nav-blossound"><b>Blossound</b></a></li>
+        <li><a href="index_unseen.html" id="nav-unseen"><b>Unseen Rhapsody</b></a></li>
+      </ul>
+    </div>
+    <div class="nav-bottom">
+      <ul>
+        <li class="contact"><a href="#" id="nav-contact">Contact Us</a></li>
+        <li class="contact"><a href="#" id="nav-faq">FAQ</a></li>
+        <li class="contact"><a href="#" id="nav-future">Future Visions</a></li>
+      </ul>
+    </div>
   </div>
   <button id="openSidebar">&#9776;</button>
   

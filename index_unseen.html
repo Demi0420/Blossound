@@ -1,0 +1,1601 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>Unseen Phapsody</title>
+  <!-- 添加一个空 favicon 避免加载本地文件错误 -->
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.39/Tone.js"></script>
+  <style>
+    body {
+        font-family: 'Avenir';
+        background-color: #FCFAF2;
+        color: #080808;
+        margin: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;  /* 垂直居中 */
+        align-items: center;      /* 水平居中 */
+        min-height: 100vh;        /* 至少占满整个视口高度 */
+        text-align: center;       /* 文字居中 */
+    }
+    .wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: calc(100vh - 40px);
+      width: 100%;
+    }
+    .content {
+      flex: 1;
+      padding: 20px;
+    }
+    /* footer 固定在页面最下方 */
+    footer {
+        margin-top: auto;  /* 自动填充顶部空间，将 footer 推到底部 */
+        width: 100%;
+        text-align: center;
+        font-size: 9px;
+        color: #555;
+        padding: 10px 0;
+    }
+    #sidebar {
+      font-family: 'Avenir';
+      height: calc(100vh - 40px);
+      width: 250px;
+      position: fixed;
+      left: -270px;
+      top: 0;
+      background-color: #434343;
+      overflow-x: hidden;
+      transition: 0.5s;
+      padding-top: 60px;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+      padding-bottom: 60px;  /* 例如底部再增加40px内边距 */
+    }
+    /* 上半部分导航 */
+    .nav-top ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    /* 下半部分导航 */
+    .nav-bottom {
+      margin-top: auto;  /* 将 nav-bottom 推到最底部 */
+      margin-bottom: 60px;  /* 在底部再留出20px的间距 */
+    }
+
+    .nav-bottom ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    /* 设置 contact 项的字体较小 */
+    .nav-bottom ul li.contact a {
+      font-size: 0.7em;  /* 例如 70% 的默认字号 */
+    }
+    #sidebar ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    #sidebar ul li {
+      padding: 8px 8px 8px 32px;
+      text-align: left;
+    }
+    #sidebar ul li a {
+      color: #fff;
+      text-decoration: none;
+      display: block;
+    }
+    #sidebar ul li a:hover {
+      background-color: #434343;
+    }
+    #openSidebar {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      font-size: 30px;
+      background: none;
+      border: none;
+      color: #434343;
+      cursor: pointer;
+      z-index: 3;
+    }
+    /* 弹出框（Modal）样式 */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      width: 400px;
+      height: 600px;
+      background-color: #fff;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+      border-radius: 8px; /* 无圆角 */
+      padding: 20px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-content .scrollContainer {
+      font-size: 14px;
+      overflow-y: auto;
+      flex: 1;
+      text-align: left;
+    }
+    .modal-content p {
+      margin: 5px 0;
+    }
+    .modal-content .centerContent {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      font-size: 14px;
+    }
+    .modal-content .close {
+      position: absolute;
+      top: 14px;
+      right: 10px;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    #closeSidebar {
+      position: absolute;
+      top: 20px;
+      right: 25px;
+      font-size: 36px;
+      background: none;
+      border: none;
+      color: #FCFAF2;
+      cursor: pointer;
+    }
+    #imageCanvas {
+        border-radius: 4px;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        border: 1px solid #ccc;
+        margin-top: 10px;
+        cursor: crosshair;
+        display: block; /* 确保是 block 级别以便 margin auto 生效 */
+    }
+    #lilypondContainer {
+        margin-top: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    #lilypondCode {
+      background-color: #f7f7f7;
+      border: 1px solid #ccc;
+      padding: 10px;
+      white-space: pre-wrap;
+      font-family: Consolas, monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* 隐藏文件输入框（移出视口） */
+    #imageUpload {
+      position: absolute;
+      left: -9999px;
+    }
+    .custom-file-upload {
+      font-family: 'Avenir';
+      display: inline-block;
+      width: 150px;      /* 固定宽度 */
+      height: 50px;      /* 固定高度 */
+      line-height: 50px; /* 设置行高，使文字垂直居中 */
+      text-align: center;/* 文字水平居中 */
+      padding: 0;        /* 如果设置了固定高度，通常需要取消内边距 */
+      cursor: pointer;
+      border: 2px solid #074D8F;
+      border-radius: 8px;
+      background-color: #074D8F;
+      color: #fff;
+      font-size: 16px;
+      transition: background-color 0.3s, border-color 0.3s;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+      margin-top: 5px; /* 避免与侧边栏按钮重叠 */
+      margin-right: 50px;
+      margin-left: 50px;
+    }
+    .custom-file-upload:hover {
+      background-color: #113b68;
+      border-color: #113b68;
+    }
+    .btn {
+      font-family: 'Avenir';
+      display: inline-block;
+      width: 150px;      /* 固定宽度 */
+      height: 50px;      /* 固定高度 */
+      line-height: 50px; /* 设置行高，使文字垂直居中 */
+      text-align: center;/* 文字水平居中 */
+      padding: 0;        /* 如果设置了固定高度，通常需要取消内边距 */
+      cursor: pointer;
+      border: 2px solid #434343;
+      border-radius: 8px;
+      background-color: #434343;
+      color: #fff;
+      font-size: 16px;
+      margin-right: 50px;
+      margin-top: 5px;
+      margin-left: 50px;
+      transition: background-color 0.3s, border-color 0.3s;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+    }
+    .btn:hover {
+      background-color: #1C1C1C;
+      border-color: #1C1C1C;
+    }
+    /* 初始隐藏 canvas , Clear 按钮 和 LilyPond Source Code */
+    #imageCanvas, #clearButton, #lilypondCode {
+      display: none;
+    }
+    /* 针对屏幕宽度较小的设备进行调整 */
+    @media only screen and (max-width: 800px) {
+      body {
+        font-size: 18px; /* 增大整体文字大小 */
+        margin: 0;
+      }
+      .wrapper {
+        min-height: 100vh;
+      }
+      .modal-content {
+        width: calc(100vw - 100px); /* 手机屏幕宽度减去100px */
+        height: 600px;
+      }
+      .btn {
+        margin: 10px 20px;    /* 调整按钮的外边距 */
+      }
+      .custom-file-upload {
+        margin: 10px 20px;    /* 调整按钮的外边距 */
+      }
+      #imageCanvas,
+      #lilypondContainer,
+      #lilypondCode {
+        width: calc(100vw - 50px);
+      }
+      footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        z-index: 100;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+        <div id="sidebar">
+  <button id="closeSidebar">&times;</button>
+  <div class="nav-top">
+    <ul>
+      <li><a href="#" id="nav-top">TOP</a></li>
+      <li><a href="index.html" id="nav-blossound"><b>Blossound</b></a></li>
+      <li><a href="index_unseen.html" id="nav-unseen"><b>Unseen Rhapsody</b></a></li>
+    </ul>
+  </div>
+  <div class="nav-bottom">
+    <ul>
+      <li class="contact"><a href="#" id="nav-contact">Contact Us</a></li>
+      <li class="contact"><a href="#" id="nav-faq">FAQ</a></li>
+      <li class="contact"><a href="#" id="nav-future">Future Visions</a></li>
+    </ul>
+  </div>
+</div>
+        <button id="openSidebar">&#9776;</button>
+  <h1>Unseen Rhapsody</h1>
+  <p>Hearing the colors unseen</p>
+  <label for="imageUpload" class="custom-file-upload">
+    SELECT IMAGE
+  </label>
+  <input type="file" id="imageUpload" accept="image/*" />
+  <br>
+  <canvas id="imageCanvas"></canvas>
+  <br>
+  <button id="clearButton" class="btn">CLEAR ALL</button>
+  
+  <div id="lilypondContainer"></div>
+  <!-- <h3>LilyPond Source Code</h3> -->
+  <pre id="lilypondCode"></pre>
+
+  <footer>
+    © 2025 Blossound. All rights reserved.
+  </footer>
+</div>
+
+ <!-- 弹出框 -->
+ <div id="modal" class="modal">
+    <div class="modal-content">
+    </div>
+  </div>
+  
+  <!-- 引入 VexFlow 库 -->
+  <script src="https://unpkg.com/vexflow/releases/vexflow-debug.js"></script>
+  
+  <script>
+
+    /* 导航侧边栏的开关 */
+    const openSidebar = document.getElementById('openSidebar');
+    const closeSidebar = document.getElementById('closeSidebar');
+    const sidebar = document.getElementById('sidebar');
+    
+    openSidebar.addEventListener('click', () => {
+      sidebar.style.left = "0";
+    });
+    
+    closeSidebar.addEventListener('click', () => {
+      sidebar.style.left = "-250px";
+    });
+    
+    /* 弹出框功能 */
+    const modal = document.getElementById('modal');
+    const modalContentContainer = document.querySelector('.modal-content');
+    
+    function openModal() {
+      modal.style.display = "flex";
+    }
+    
+    function closeModal() {
+      modal.style.display = "none";
+    }
+    
+    // 关闭按钮事件（需在每次设置内容后绑定）
+  function bindModalClose() {
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+  }
+  
+  // 当点击 TOP 时，显示三段长文本，文字字号10px，内容可滚动
+  document.getElementById('nav-top').addEventListener('click', (e) => {
+    e.preventDefault();
+    modalContentContainer.innerHTML =
+      '<span class="close" id="modalClose">&times;</span>' +
+      '<div class="scrollContainer">' +
+        '<h2>INTRODUCTION</h2><br>' +
+        '<p>Have you ever stood in a museum or art exhibition, gazing at a masterpiece yet feeling unable to truly enter the artist’s world—perhaps due to a language barrier? Or maybe you’ve wanted to bring your parents or friends along, only to realize some are visually impaired and can only listen to others describe the beauty they cannot see for themselves? Wouldn’t it be wonderful if we could transform images into <strong>sound</strong>, allowing our eyes and ears to discover the wonders of art together?</p><br><br>' +
+        '<p>With these thoughts in mind, I had a bold idea: what if we could interpret images through music, letting the colors and emotions of a painting blossom into a melody in our minds? Could this enable visually impaired individuals to <strong>hear</strong> the essence of a painting, while giving all of us a deeper understanding of the work? Driven by this question, I created a small <strong>image-to-sound</strong> project. Simply upload a photo, and the system automatically generates a unique piano melody and score—bestowing each still image with its own <strong>background song</strong>.</p><br><br>' +
+        '<p>To give you a taste of this cross-boundary exploration:</p><br><br>' +
+        '<p>I.   Photos taken at the same place, but in different seasons or weather, might translate into completely distinct sets of notes—allowing you to <strong>hear</strong> the contrast between the vitality of spring and the melancholy of autumn.</p><br>' +
+        '<p>II.  In a museum, a Monet or Van Gogh painting could be rendered into a melody, so you can <strong>hear</strong> its colors while admiring the brushstrokes.</p><br>' +
+        '<p>III. Traveling with family or friends? Snap a memorable photo, then instantly generate a <strong>spontaneous photo soundtrack</strong>, preserving both the image and its music as a one-of-a-kind memento.</p><br>' +
+        '<p>I hope this <strong>sonic visualization</strong> approach will offer a fresh perspective for more people to appreciate art, especially those who may not be able to see it themselves. And for those with no composition experience, this project might reveal how a single photograph can inspire a marvelous musical connection. Every click of the shutter is like the world searching for its theme song. May you find, in this project, a chance to hear the distinct tune that belongs to both you and the image before you?</p><br><br>' +
+      '</div>';
+    bindModalClose();
+    openModal();
+  });
+  
+  // 当点击 Contact Us 时，弹出框中显示 “e-mail address”
+  document.getElementById('nav-contact').addEventListener('click', (e) => {
+    e.preventDefault();
+    modalContentContainer.innerHTML =
+      '<span class="close" id="modalClose">&times;</span>' +
+      '<div class="scrollContainer">' +
+        '<h2>CONTACT BLOSSOUND</h2>' +
+        '<p><i>Where Colors Find Their Voice</i></p><br><br>' +
+        '<p>We believe every image holds a hidden melody waiting to be heard. Whether you’re an artist exploring sonic landscapes, a museum curator reimagining accessibility, or simply someone who just saw a sunset that deserves its own soundtrack – we want to hear from you.</p><br><br><br><br>' + 
+        '<p><strong>Let’s Create Harmony Together:</strong></p>' +
+        '<p><i>General Inquires</i>: yaoyao.demi0420@gmail.com</p>' +
+        '<p>We read every message and respond within 72 hours.</p><br><br>' +
+        '<p align="center">"<i>The world whispers in colors, <br>and we’re here to amplify their song.</i>"</p><br><br>' +
+      '</div>';
+    bindModalClose();
+    openModal();
+  });
+  
+  // 当点击 FAQ 时，弹出框中显示 “Answers”
+  document.getElementById('nav-faq').addEventListener('click', (e) => {
+    e.preventDefault();
+    modalContentContainer.innerHTML =
+      '<span class="close" id="modalClose">&times;</span>' +
+      '<div class="centerContent">' +
+        '<p>We will collect questions and list the answers here.</p>' +
+      '</div>';
+    bindModalClose();
+    openModal();
+  });
+
+    // 当点击 FAQ 时，弹出框中显示 “Answers”
+    document.getElementById('nav-future').addEventListener('click', (e) => {
+    e.preventDefault();
+    modalContentContainer.innerHTML =
+      '<span class="close" id="modalClose">&times;</span>' +
+      '<div class="scrollContainer">' +
+        '<h2>Towards Unseen Rhapsody</h2>' +
+        '<p><i>Hearing the colors unseen</i></p><br><br>' +
+        '<p>At Blossound, we’re crafting a world where art transcends the boundaries of light. We are currently:</p><br>' + 
+        '<p>I.  Developing haptic-sound interfaces that empower fingertips to see melodies</p><br>' +
+        '<p>II. Co-creating immersive, multi-sensory gallery experiences with blind musicians.</p><br><br>' +
+      '</div>';
+    bindModalClose();
+    openModal();
+  });
+  
+  // 点击弹出框背景关闭弹出框
+  window.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+    /******************************************
+     * 预定义调性映射
+     ******************************************/
+    const COLOR_TONE_DICT = {
+        "#FFFFFF": "C-b",  
+        "#000000": "C-s",  
+        "#FFFDD0": "#C-b", 
+        "#8B0000": "#C-s",
+        "#008000": "D-b",  
+        "#013220": "d-s",  
+        "#FFFFE0": "bE-b", 
+        "#7FFF00": "be-s",
+        "#FFFF00": "E-b", 
+        "#00008B": "e-s", 
+        "#FFDAB9": "F-b", 
+        "#4B0082": "f-s", 
+        "#FF0000": "#F-b",
+        "#191970": "#f-s",
+        "#FFA500": "G-b", 
+        "#1E90FF": "g-s", 
+        "#B8860B": "bA-b", 
+        "#ADD8E6": "#g-s",
+        "#FFD700": "A-b",  
+        "#0000FF": "a-s", 
+        "#FFB6C1": "bB-b",
+        "#654321": "bb-s",
+        "#C0C0C0": "B-b",  
+        "#696969": "b-s" 
+    };
+    
+    const COLOR_TO_TONE_MAP = {
+        "C-b": {
+            "description": "#FFFFFF", 
+            "tempo": 85,
+            "key": "C",
+            "scale_mode": "major",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["C", "D", "E", "F", "G", "A", "B", "C"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["C", "F", "G", "C"]
+        },
+        "C-s": {
+            "description": "#000000", 
+            "tempo": 85,
+            "key": "C",
+            "scale_mode": "minor",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["C", "D", "Eb", "F", "G", "Ab", "Bb", "C"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["Cm", "Fm", "G", "Cm"]
+        },
+        "#C-b": {
+            "description": "#FFFDD0", 
+            "tempo": 85,
+            "key": "C#",
+            "scale_mode": "major",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["C#", "D#", "E#", "F#", "G#", "A#", "B#", "C#"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["C#", "F#", "G#", "C#"]
+        },
+        "#C-s": {
+            "description": "#8B0000", 
+            "tempo": 85,
+            "key": "C#",
+            "scale_mode": "minor",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["C#", "D#", "E", "F#", "G#", "A", "B", "C#"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["C#m", "F#m", "G#", "C#m"]
+        },
+        "D-b": {
+            "description": "#008000", 
+            "tempo": 85,
+            "key": "D",
+            "scale_mode": "major",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["D", "E", "F#", "G", "A", "B", "C#", "D"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["D", "G", "A", "D"]
+        },
+        "d-s": {
+            "description": "#013220", 
+            "tempo": 85,
+            "key": "D",
+            "scale_mode": "minor",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["D", "E", "F", "G", "A", "Bb", "C", "D"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["Dm", "Gm", "A", "Dm"]
+        },
+        "bE-b": {
+            "description": "#FFFFE0", 
+            "tempo": 85,
+            "key": "Eb",
+            "scale_mode": "major",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["E-", "F", "G", "Ab", "Bb", "C", "D", "Eb"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["Eb", "Ab", "Bb", "Eb"]
+        },
+        "be-s": {
+            "description": "#7FFF00", 
+            "tempo": 85,
+            "key": "Eb",
+            "scale_mode": "minor",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["Eb", "F", "Gb", "Ab", "Bb", "Cb", "Db", "Eb"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["Ebm", "Abm", "Bb", "Ebm"]
+        },
+        "E-b": {
+            "description": "#FFFF00", 
+            "tempo": 85,
+            "key": "E",
+            "scale_mode": "major",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["E", "F#", "G#", "A", "B", "C#", "D#", "E"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["E", "A", "B", "E"],
+        },
+        "e-s": {
+            "description": "#00008B", 
+            "tempo": 85,
+            "key": "E",
+            "scale_mode": "minor",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["E", "F#", "G", "A", "B", "C", "D", "E"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["Em", "Am", "B", "Em"]
+        },
+        "F-b": {
+            "description": "#FFDAB9", 
+            "tempo": 85,
+            "key": "F",
+            "scale_mode": "major",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["F", "G", "A", "Bb", "C", "D", "E", "F"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["F", "Bb", "C", "F"]
+        },
+        "f-s": {
+            "description": "#4B0082", 
+            "tempo": 85,
+            "key": "F",
+            "scale_mode": "minor",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["F", "G", "Ab", "Bb", "C", "Db", "Eb", "F"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["Fm", "Bbm", "C", "Fm"]
+        },
+        "#F-b": {
+            "description": "#FF0000", 
+            "tempo": 85,
+            "key": "F#",
+            "scale_mode": "major",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["F#", "G#", "A#", "B", "C#", "D#", "E#", "F#"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["F#", "B", "C#", "F#"]
+        },
+        "#f-s": {
+            "description": "#191970",
+            "tempo": 85,
+            "key": "F#",
+            "scale_mode": "minor",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["F#", "G#", "A", "B", "C#", "D", "E", "F#"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["F#m", "Bm", "C#", "F#m"]
+        },
+        "G-b": {
+            "description": "#FFA500", 
+            "tempo": 85,
+            "key": "G",
+            "scale_mode": "major",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["G", "A", "B", "C", "D", "E", "F#", "G"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["G", "C", "D", "G"],
+        },
+        "g-s": {
+            "description": "#1E90FF",
+            "tempo": 85,
+            "key": "G",
+            "scale_mode": "minor",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["G", "A", "Bb", "C", "D", "Eb", "F", "G"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["Gm", "Cm", "D", "Gm"]
+        },
+        "bA-b": {
+            "description": "#B8860B", 
+            "tempo": 85,
+            "key": "Ab",
+            "scale_mode": "major",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["Ab", "Bb", "C", "Db", "Eb", "F", "G", "Ab"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["Ab", "Db", "Eb", "Ab"]
+        },
+        "#g-s": {
+            "description": "#ADD8E6", 
+            "tempo": 85,
+            "key": "G#",
+            "scale_mode": "minor",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["G#", "A#", "B", "C#", "D#", "E#", "F#", "G#"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["G#m", "C#m", "D#", "G#m"]
+        },
+        "A-b": {
+            "description": "#FFD700", 
+            "tempo": 85,
+            "key": "A",
+            "scale_mode": "major",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["A", "B", "C#", "D", "E", "F#", "G#", "A"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["A", "D", "E", "A"]
+        },
+        "a-s": {
+            "description": "#0000FF", 
+            "tempo": 85,
+            "key": "A",
+            "scale_mode": "minor",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["A", "B", "C", "D", "E", "F", "G", "A"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["Am", "Dm", "E", "Am"]
+        },
+        "bB-b": {
+            "description": "#FFB6C1", 
+            "tempo": 85,
+            "key": "Bb",
+            "scale_mode": "major",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["Bb", "C", "D", "Eb", "F", "G", "A", "Bb"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["Bb", "Eb", "F", "Bb"]
+        },
+        "bb-s": {
+            "description": "#654321", 
+            "tempo": 85,
+            "key": "Bb",
+            "scale_mode": "minor",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["Bb", "C", "Db", "Eb", "F", "Gb", "Ab", "Bb"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["Bbm", "Ebm", "F", "Bbm"]
+        },
+        "B-b": {
+            "description": "#C0C0C0", 
+            "tempo": 85,
+            "key": "B",
+            "scale_mode": "major",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["B", "C#", "D#", "E", "F#", "G#", "A#", "B"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["B", "E", "F#", "B"]
+        },
+        "b-s": {
+            "description": "#696969",  
+            "tempo": 85,
+            "key": "B",
+            "scale_mode": "minor",
+            "base_instrument": "Acoustic Grand Piano",
+            "scale": ["B", "C#", "D", "E", "F#", "G", "A", "B"],
+            "rhythm_pattern": [1, 1, 1, 1],
+            "chord_progression": ["Bm", "Em", "F#", "Bm"]
+        }
+        };
+    
+    /******************************************
+     * 常用工具函数
+     ******************************************/
+
+    
+
+
+    function componentToHex(c) {
+      let hex = c.toString(16);
+      return hex.length === 1 ? "0" + hex : hex;
+    }
+    function rgbToHex(r, g, b) {
+      return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+    }
+    function hexToRgb(hex) {
+      hex = hex.replace(/^#/, '');
+      if(hex.length === 3) {
+        hex = hex.split('').map(c => c+c).join('');
+      }
+      let bigint = parseInt(hex, 16);
+      let r = (bigint >> 16) & 255;
+      let g = (bigint >> 8) & 255;
+      let b = bigint & 255;
+      return [r, g, b];
+    }
+    // 返回 [h, s, v]，h:0~360, s,v:0~100
+    function rgbToHsv(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      let max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h, s, v = max;
+      let d = max - min;
+      s = max === 0 ? 0 : d / max;
+      if(max === min) {
+        h = 0;
+      } else {
+        if(max === r) {
+          h = (g - b) / d + (g < b ? 6 : 0);
+        } else if(max === g) {
+          h = (b - r) / d + 2;
+        } else {
+          h = (r - g) / d + 4;
+        }
+        h /= 6;
+      }
+      return [h * 360, s * 100, v * 100];
+    }
+    function computeAverageColor(imageData) {
+      const data = imageData.data;
+      let r = 0, g = 0, b = 0;
+      const numPixels = data.length / 4;
+      for(let i = 0; i < data.length; i += 4) {
+        r += data[i];
+        g += data[i+1];
+        b += data[i+2];
+      }
+      r = Math.round(r / numPixels);
+      g = Math.round(g / numPixels);
+      b = Math.round(b / numPixels);
+      return { r, g, b, hex: rgbToHex(r, g, b).toLowerCase() };
+    }
+    function computeComplexity(imageData) {
+      const data = imageData.data;
+      const numPixels = data.length / 4;
+      let brightnessValues = [];
+      for(let i = 0; i < data.length; i += 4) {
+        let brightness = 0.299 * data[i] + 0.587 * data[i+1] + 0.114 * data[i+2];
+        brightnessValues.push(brightness);
+      }
+      const mean = brightnessValues.reduce((a, b) => a + b, 0) / brightnessValues.length;
+      let variance = brightnessValues.reduce((sum, val) => sum + (val - mean) ** 2, 0) / brightnessValues.length;
+      return Math.sqrt(variance);
+    }
+    function normalizeComplexityScores(scores) {
+      const min = Math.min(...scores);
+      const max = Math.max(...scores);
+      if(min === max) return scores.map(() => 0);
+      return scores.map(s => ((s - min) / (max - min)) * 2 - 1);
+    }
+    function distance(c1, c2) {
+      return Math.sqrt((c1[0]-c2[0])**2 + (c1[1]-c2[1])**2 + (c1[2]-c2[2])**2);
+    }
+    
+    // 辅助函数：将 note.pitch 中的 "-" 替换为 "b"
+    function convertNoteName(noteName) {
+        // 假定 noteName 中的 "-" 表示 flat，将其替换为 "b"
+        return noteName.replace(/-/g, "b");
+    }
+
+    /******************************************
+     * KMeans 聚类提取主导颜色（返回 HEX 数组）
+     ******************************************/
+    function extractDominantColors(imageData, numColors = 4) {
+      const data = imageData.data;
+      let pixels = [];
+      for(let i = 0; i < data.length; i += 4) {
+        pixels.push([data[i], data[i+1], data[i+2]]);
+      }
+      let centroids = [];
+      for(let i = 0; i < numColors; i++) {
+        centroids.push(pixels[Math.floor(Math.random() * pixels.length)]);
+      }
+      let assignments = new Array(pixels.length).fill(0);
+      const iterations = 10;
+      for(let iter = 0; iter < iterations; iter++) {
+        for(let i = 0; i < pixels.length; i++) {
+          let minDist = Infinity;
+          let bestCluster = 0;
+          for(let j = 0; j < numColors; j++) {
+            let d = distance(pixels[i], centroids[j]);
+            if(d < minDist) {
+              minDist = d;
+              bestCluster = j;
+            }
+          }
+          assignments[i] = bestCluster;
+        }
+        let sums = Array(numColors).fill(null).map(() => [0, 0, 0]);
+        let counts = Array(numColors).fill(0);
+        for(let i = 0; i < pixels.length; i++) {
+          let cluster = assignments[i];
+          sums[cluster][0] += pixels[i][0];
+          sums[cluster][1] += pixels[i][1];
+          sums[cluster][2] += pixels[i][2];
+          counts[cluster]++;
+        }
+        for(let j = 0; j < numColors; j++) {
+          if(counts[j] > 0) {
+            centroids[j] = [
+              Math.round(sums[j][0] / counts[j]),
+              Math.round(sums[j][1] / counts[j]),
+              Math.round(sums[j][2] / counts[j])
+            ];
+          }
+        }
+      }
+      let hexes = centroids.map(c => rgbToHex(c[0], c[1], c[2]).toLowerCase());
+      return hexes;
+    }
+    
+    /******************************************
+     * 为单个 grid（25×25）生成音符序列
+     * 每个 grid 内总拍数为 1 拍
+     ******************************************/
+    // 动态生成节奏模式：输入当前 cell 的图像数据，输出一个数组，数组中每个数值表示该音符的时值，所有数值之和为 1。
+    function generateRhythmPattern(cellData) {
+        // 根据 cellData 计算复杂度（这里使用 computeComplexity 函数，假设数值大致在 0 ~ 100 范围内）
+        let complexity = computeComplexity(cellData);
+        // 将复杂度归一化到 [0, 1]（这里简单认为 100 为上限，可根据实际情况调整）
+        let x = Math.min(Math.max(complexity / 100, 0), 1);
+        // 定义 alpha 参数：x 越大，alpha 越大，倾向于选择更小的时值
+        let alpha = 1 + 3 * x;
+        
+        // 允许的音符时值（可按需要扩展）
+        const allowedDurations = [1, 0.5, 0.25];
+        let pattern = [];
+        let remaining = 1;
+        
+        // 随机填充时值直到凑满 1 拍
+        while (remaining > 0.0001) {
+            // 筛选出不超过剩余时值的选项
+            let possible = allowedDurations.filter(d => d <= remaining + 0.0001);
+            if (possible.length === 0) break;
+            // 计算各个可能时值的权重：权重 = (1/d)^(alpha)
+            let weights = possible.map(d => Math.pow(1 / d, alpha));
+            let sumWeights = weights.reduce((a, b) => a + b, 0);
+            let r = Math.random() * sumWeights;
+            let chosen = possible[0];
+            for (let i = 0; i < possible.length; i++) {
+            r -= weights[i];
+            if (r <= 0) {
+                chosen = possible[i];
+                break;
+            }
+            }
+            pattern.push(chosen);
+            remaining -= chosen;
+        }
+        // 如果最后总和有微小误差，则调整最后一个音符
+        let total = pattern.reduce((a, b) => a + b, 0);
+        if (Math.abs(total - 1) > 0.0001) {
+            pattern[pattern.length - 1] += (1 - total);
+        }
+        return pattern;
+    }
+
+    // 修改后的 selectNotesForGrid 函数
+    function selectNotesForGrid(cellData, baseScale) {
+        // 计算该 cell 的平均颜色
+        const avgColor = computeAverageColor(cellData);
+        const avgHSV = rgbToHsv(avgColor.r, avgColor.g, avgColor.b);
+        // 利用 KMeans 提取 4 个主导颜色（HEX 格式）
+        const dominantHexes = extractDominantColors(cellData, 4);
+        let dominantNotes = [];
+        dominantHexes.forEach(hex_color => {
+            let rgb = hexToRgb(hex_color);
+            let domHSV = rgbToHsv(rgb[0], rgb[1], rgb[2]);
+            let hue_diff = domHSV[0] - avgHSV[0];
+            let sat_diff = domHSV[1] - avgHSV[1];
+            let diff = hue_diff * 1.0 + sat_diff * 0.5;
+            let factor = 30.0;
+            let offset = Math.round(diff / factor);
+            let base_index = Math.floor(baseScale.length / 2);
+            let note_index = base_index + offset;
+            note_index = Math.max(0, Math.min(note_index, baseScale.length - 1));
+            let note = baseScale[note_index];
+            dominantNotes.push(note);
+        });
+        // 动态生成节奏模式：根据当前 cell 的图像数据生成一个时值数组，其和为 1 拍
+        let pattern = generateRhythmPattern(cellData);
+        // 根据生成的模式为每个音符分配音高
+        let n = pattern.length;
+        let notesForGrid = [];
+        for (let i = 0; i < n; i++) {
+            // 这里采用循环赋值，若 pattern 的长度大于 dominantNotes 数量，则循环使用已有音高
+            notesForGrid.push({ pitch: dominantNotes[i % dominantNotes.length], duration: pattern[i] });
+        }
+        console.log("Grid notes:", notesForGrid);
+        return notesForGrid;
+    }
+
+    // 将一个时值拆分为合法的 LilyPond 时值列表
+    function splitDuration(duration) {
+        const allowed = [4.0, 2.0, 1.0, 0.5, 0.25];
+        let result = [];
+        let rem = duration;
+        const tol = 1e-9;
+        for (let d of allowed) {
+            while (rem >= d - tol) {
+            result.push(d);
+            rem -= d;
+            }
+        }
+        if (Math.abs(rem) > tol) {
+            throw new Error(`无法精确拆分时值：${duration}，剩余：${rem}`);
+        }
+        return result;
+    }
+
+    // 检查音符的时值是否为允许的值（考虑浮点数容差），如果不在，则拆分为多个合法时值
+    function expandNotes(notes) {
+        const allowed = [4.0, 2.0, 1.0, 0.5, 0.25];
+        const tol = 1e-9;
+        let expanded = [];
+        notes.forEach(note => {
+            // 对于休止符或其他特殊标记直接保留
+            if (note.pitch === "r") {
+            expanded.push(note);
+            return;
+            }
+            // 判断当前音符的时值是否接近某个允许值
+            let isAllowed = allowed.some(d => Math.abs(note.duration - d) < tol);
+            if (isAllowed) {
+                expanded.push(note);
+            } else {
+                // 拆分该时值
+                let splits = splitDuration(note.duration);
+                splits.forEach(d => {
+                    expanded.push({ pitch: note.pitch, duration: d });
+                });
+            }
+        });
+        return expanded;
+    }
+    
+    /******************************************
+     * 合并相邻相同音阶的音符
+     ******************************************/
+    function mergeNotes(notesArray) {
+      if(notesArray.length === 0) return [];
+      let merged = [ { pitch: notesArray[0].pitch, duration: notesArray[0].duration } ];
+      for(let i = 1; i < notesArray.length; i++) {
+        let current = notesArray[i];
+        let last = merged[merged.length - 1];
+        if(current.pitch === last.pitch) {
+          last.duration += current.duration;
+        } else {
+          merged.push({ pitch: current.pitch, duration: current.duration });
+        }
+      }
+      return merged;
+    }
+    
+    /******************************************
+     * 将拍数转换为 VexFlow 时值及附点信息
+     * 假设 1 拍 = 四分音符 (4)
+     ******************************************/
+    function convertBeatToVF(duration) {
+        const tol = 1e-9;
+        // allowed durations及其对应的VexFlow记谱代码：
+        // 4.0 -> whole note ("w")     → 4拍, tick = 16384
+        // 2.0 -> half note ("2")       → 2拍, tick = 8192
+        // 1.0 -> quarter note ("4")    → 1拍, tick = 4096
+        // 0.5 -> eighth note ("8")     → 0.5拍, tick = 2048
+        // 0.25 -> sixteenth note ("16")→ 0.25拍, tick = 1024
+        // 0.125 -> thirty-second note ("32") → 0.125拍, tick = 512
+        // 0.0625 -> sixty-fourth note ("64") → 0.0625拍, tick = 256
+        if (Math.abs(duration - 4.0) < tol) return { vfDuration: "w", dots: 0 };
+        if (Math.abs(duration - 2.0) < tol) return { vfDuration: "2", dots: 0 };
+        if (Math.abs(duration - 1.0) < tol) return { vfDuration: "4", dots: 0 };
+        if (Math.abs(duration - 0.5) < tol) return { vfDuration: "8", dots: 0 };
+        if (Math.abs(duration - 0.25) < tol) return { vfDuration: "16", dots: 0 };
+        // if (Math.abs(duration - 0.125) < tol) return { vfDuration: "32", dots: 0 };
+        // if (Math.abs(duration - 0.0625) < tol) return { vfDuration: "64", dots: 0 };
+        // 如果遇到其他值，尝试先进行拆分，或者默认返回四分音符（这里可根据需要调整）
+        console.warn("convertBeatToVF: 未知时值", duration, "，默认转换为四分音符");
+        return { vfDuration: "4", dots: 0 };
+    }
+
+    // Acoustic Grand Piano 采样器，使用 Tone.js 官方示例的 Salamander 采样集
+    const acousticSampler = new Tone.Sampler({
+      urls: {
+        "A0": "A0.mp3",
+        "C1": "C1.mp3",
+        "D#1": "Ds1.mp3",
+        "F#1": "Fs1.mp3",
+        "A1": "A1.mp3",
+        "C2": "C2.mp3",
+        "D#2": "Ds2.mp3",
+        "F#2": "Fs2.mp3",
+        "A2": "A2.mp3",
+        "C3": "C3.mp3",
+        "D#3": "Ds3.mp3",
+        "F#3": "Fs3.mp3",
+        "A3": "A3.mp3",
+        "C4": "C4.mp3",
+        "D#4": "Ds4.mp3",
+        "F#4": "Fs4.mp3",
+        "A4": "A4.mp3",
+        "C5": "C5.mp3",
+        "D#5": "Ds5.mp3",
+        "F#5": "Fs5.mp3",
+        "A5": "A5.mp3",
+        "C6": "C6.mp3",
+        "D#6": "Ds6.mp3",
+        "F#6": "Fs6.mp3",
+        "A6": "A6.mp3",
+        "C7": "C7.mp3",
+        "D#7": "Ds7.mp3",
+        "F#7": "Fs7.mp3",
+        "A7": "A7.mp3",
+        "C8": "C8.mp3"
+      },
+      release: 1,
+      baseUrl: "https://tonejs.github.io/audio/salamander/"
+    }).toDestination();
+
+    // Electric Piano 采样器
+    // 注意：如果没有找到合适的采样文件，可以暂时采用 acousticSampler 替代，
+    // 或根据你的需求加载其它公开的 Electric Piano 采样集。
+    const electricSampler = new Tone.Sampler({
+      urls: {
+        "A0": "A0.mp3",
+        "C1": "C1.mp3",
+        "D#1": "Ds1.mp3",
+        "F#1": "Fs1.mp3",
+        "A1": "A1.mp3",
+        "C2": "C2.mp3",
+        "D#2": "Ds2.mp3",
+        "F#2": "Fs2.mp3",
+        "A2": "A2.mp3",
+        "C3": "C3.mp3",
+        "D#3": "Ds3.mp3",
+        "F#3": "Fs3.mp3",
+        "A3": "A3.mp3",
+        "C4": "C4.mp3",
+        "D#4": "Ds4.mp3",
+        "F#4": "Fs4.mp3",
+        "A4": "A4.mp3",
+        "C5": "C5.mp3",
+        "D#5": "Ds5.mp3",
+        "F#5": "Fs5.mp3",
+        "A5": "A5.mp3",
+        "C6": "C6.mp3",
+        "D#6": "Ds6.mp3",
+        "F#6": "Fs6.mp3",
+        "A6": "A6.mp3",
+        "C7": "C7.mp3",
+        "D#7": "Ds7.mp3",
+        "F#7": "Fs7.mp3",
+        "A7": "A7.mp3",
+        "C8": "C8.mp3"
+      },
+      release: 1,
+      // 假设 Electric Piano 采样文件存放在如下 URL（请根据实际情况调整）
+      baseUrl: "https://example.com/electric-piano-samples/"
+    }).toDestination();
+
+    // 2. 播放函数：使用 Tone.js Sampler 播放扩展后的音符序列
+    // ---------------------------
+    function playNotesWithSampler(expandedNotes, toneParams, tempo) {
+      // 根据 toneParams.base_instrument 选择采样器
+      let sampler;
+      if (toneParams.base_instrument === "Acoustic Grand Piano") {
+        sampler = acousticSampler;
+      } else if (toneParams.base_instrument === "Electric Piano") {
+        sampler = electricSampler;
+      } else {
+        sampler = acousticSampler; // 默认使用 Acoustic
+      }
+      
+      // 在第一次播放前需确保 Tone.js 已经启动（用户交互后执行此操作）
+      Tone.start();
+      
+      let now = Tone.now();
+      let t = now;
+      const beatSec = 60 / tempo;  // 每拍时长（秒）
+      
+      // 遍历每个音符
+      expandedNotes.forEach(note => {
+        // 计算音符实际播放时长（秒）
+        let noteDurationSec = note.duration * beatSec;
+        if (note.pitch === "r") {
+          // 休止符：不播放声音，但延迟 t
+          t += noteDurationSec;
+        } else {
+          // 默认将音高放在 4 号八度，生成音符名称（例如 "C4"、"D#4"）
+          let noteName = note.pitch.toUpperCase() + "4";
+          // 调用 sampler 播放该音符
+          sampler.triggerAttackRelease(noteName, noteDurationSec, t);
+          t += noteDurationSec;
+        }
+      });
+    }
+
+
+
+    
+    /******************************************
+     * 生成 LilyPond 代码文本（使用最终合并的音符序列）
+     ******************************************/
+    function generateLilyPondCode(mergedNotes, toneParams, tempo) {
+        // 对合并后的音符序列进行扩展拆分
+        let expandedNotes = expandNotes(mergedNotes);
+        const key = toneParams.key;  // 调号使用大写，如 "C"
+        const mode = toneParams.scale_mode;
+        let keyLine = "\\key " + key + " \\" + mode;
+        
+        let noteStr = "";
+        for (let i = 0; i < expandedNotes.length; i++) {
+            let note = expandedNotes[i];
+            let { vfDuration, dots } = convertBeatToVF(note.duration);
+            let dotStr = "";
+            for (let j = 0; j < dots; j++) { dotStr += "."; }
+            let noteToken = "";
+            if (note.pitch === "r") {
+                noteToken = "r" + vfDuration + dotStr;
+            } else {
+                noteToken = note.pitch.toLowerCase() + vfDuration + dotStr;
+            }
+            // 如果当前音符与前一个音符相同且非休止符，则用连音符符号连接
+            if (i > 0 && note.pitch !== "r" && note.pitch === expandedNotes[i - 1].pitch) {
+                noteStr += " ~ " + noteToken;
+            } else {
+                if(i > 0) {
+                noteStr += " ";
+                }
+                noteStr += noteToken;
+            }
+        }
+        
+        let code = `\\version "2.18.2"
+        \\score {
+        \\new Staff {
+            \\tempo 4 = ${tempo}
+            ${keyLine}
+            { ${noteStr} }
+        }
+        \\layout { }
+        \\midi { }
+        }`;
+        return code;
+        }
+    
+    /******************************************
+     * 利用 VexFlow 渲染五线谱（使用最终合并的音符序列）
+     ******************************************/
+    function renderNotation(mergedNotes, toneParams, tempo) {
+        // 先扩展拆分音符
+        let expandedNotes = expandNotes(mergedNotes);
+        
+        document.getElementById("lilypondContainer").innerHTML = "";
+        const VF = Vex.Flow;
+        const div = document.getElementById("lilypondContainer");
+        const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
+        renderer.resize(800, 200);
+        const context = renderer.getContext();
+        
+        // 使用转换函数设置调号
+        const keySignature = convertNoteName(toneParams.key) + (toneParams.scale_mode === "minor" ? "m" : "");
+        console.log("Key signature:", keySignature);
+
+        const stave = new VF.Stave(10, 40, 750);
+        stave.addClef("treble")
+            .addTimeSignature("4/4")
+            //.addKeySignature(keySignature);
+        stave.setText(keySignature, Vex.Flow.Modifier.Position.LEFT);
+        stave.setContext(context).draw();
+        
+        let vfNotes = [];
+        // 根据扩展后的音符生成 VexFlow 的 StaveNote 对象
+        expandedNotes.forEach(note => {
+            let { vfDuration, dots } = convertBeatToVF(note.duration);
+            let staveNote;
+            if (note.pitch === "r") {
+                // 休止符使用特殊记号：这里用 "b/4" 作占位键值，再在 duration 后加上 "r"
+                staveNote = new VF.StaveNote({ keys: ["b/4"], duration: vfDuration + "r" });
+            } else {
+                // 非休止符则生成对应音高的音符，假定 octave 为 4
+                let converted = convertNoteName(note.pitch);
+                let keyStr = convertNoteName(note.pitch).toLowerCase() + "/4";
+                console.log("Note pitch:", note.pitch, "->", keyStr);
+                staveNote = new VF.StaveNote({ keys: [keyStr], duration: vfDuration });
+                
+                // 如果音符名称中含有 "b" 或 "#"，说明该音符不是自然音，应在左侧显示附加记号
+                if (converted.includes("b") || converted.includes("#")) {
+                    // 如果含有 "b"，则附加 flat；如果含有 "#"，则附加 sharp
+                    let accidentalSymbol = converted.includes("b") ? "b" : "#";
+                    staveNote.addAccidental(0, new VF.Accidental(accidentalSymbol));
+                }
+            }
+            for (let i = 0; i < dots; i++) {
+                staveNote.addDotToAll();
+            }
+            vfNotes.push(staveNote);
+        });
+        
+
+        const voice = new VF.Voice({ num_beats: 4, beat_value: 4 });
+        voice.addTickables(vfNotes);
+        new VF.Formatter().joinVoices([voice]).format([voice], 700);
+        voice.draw(context, stave);
+
+        // 自动为连续相同音高的音符添加连音符（Tie）
+        let ties = [];
+        for (let i = 1; i < vfNotes.length; i++) {
+            // 仅对非休止符进行判断，休止符通常不需要连音
+            // 这里比较两个音符的键值字符串，如果相同，则认为音高相同
+            let prevKey = vfNotes[i - 1].getKeys()[0];
+            let curKey = vfNotes[i].getKeys()[0];
+            // 排除休止符的占位键值 "b/4"（假设休止符都用该键值构造）
+            if (prevKey !== "b/4" && curKey !== "b/4" && prevKey === curKey) {
+                let tie = new VF.StaveTie({
+                    first_note: vfNotes[i - 1],
+                    last_note: vfNotes[i]
+                });
+                ties.push(tie);
+            }
+        }
+        // 绘制所有 tie 对象
+        ties.forEach(tie => tie.setContext(context).draw());
+    }
+
+    /******************************************
+     * 用 Web Audio API 播放最终合并后的音符序列
+     ******************************************/
+    function playNotes(expandedNotes, tempo) {
+        const beatDuration = 60 / tempo; // 每拍秒数
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+        let currentTime = audioCtx.currentTime;
+        
+        expandedNotes.forEach(note => {
+            // 对休止符不播放声音，但延迟相应时间
+            if (note.pitch === "r") {
+                currentTime += note.duration * beatDuration;
+                return;
+            }
+            let frequency = getFrequency(note.pitch);
+            let durationSeconds = note.duration * beatDuration;
+            
+            // 创建 oscillator 与 gainNode
+            let oscillator = audioCtx.createOscillator();
+            let gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            
+            oscillator.frequency.setValueAtTime(frequency, currentTime);
+            oscillator.type = 'sine';  // 可尝试 "triangle", "sawtooth", 等其他类型
+            
+            // 设置包络：攻击和释放阶段
+            let attackTime = 0.01;   // 10毫秒攻击
+            let releaseTime = 0.01;  // 10毫秒释放
+            gainNode.gain.setValueAtTime(0, currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.5, currentTime + attackTime);
+            gainNode.gain.setValueAtTime(0.5, currentTime + durationSeconds - releaseTime);
+            gainNode.gain.linearRampToValueAtTime(0, currentTime + durationSeconds);
+            
+            oscillator.start(currentTime);
+            oscillator.stop(currentTime + durationSeconds);
+            
+            currentTime += durationSeconds;
+        });
+    }
+    
+    // 简单的音符到频率映射（假定 octave 4）
+    function getFrequency(note) {
+      const noteFrequencies = {
+        "C": 261.63,
+        "C#": 277.18,
+        "D": 293.66,
+        "D#": 311.13,
+        "E": 329.63,
+        "F": 349.23,
+        "F#": 369.99,
+        "G": 392.00,
+        "G#": 415.30,
+        "A": 440.00,
+        "A#": 466.16,
+        "B": 493.88
+      };
+      note = note.toUpperCase();
+      return noteFrequencies[note] || 440.0;
+    }
+    
+
+    // 将 RGB 转换为 Lab 色彩空间
+    function rgbToLab(rgb) {
+        // rgb: [r, g, b]，范围 0~255
+        let [r, g, b] = rgb.map(v => v / 255);
+        
+        // sRGB to linear RGB
+        r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
+        g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
+        b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
+        
+        // 转换到 XYZ（D65 标准光源）
+        let X = r * 0.4124 + g * 0.3576 + b * 0.1805;
+        let Y = r * 0.2126 + g * 0.7152 + b * 0.0722;
+        let Z = r * 0.0193 + g * 0.1192 + b * 0.9505;
+        
+        // 将 XYZ 按比例乘以 100
+        X *= 100;
+        Y *= 100;
+        Z *= 100;
+    
+        // D65 参考白点
+        const refX = 95.047, refY = 100.0, refZ = 108.883;
+        let x = X / refX;
+        let y = Y / refY;
+        let z = Z / refZ;
+        
+        // XYZ 转 Lab 的 f(t) 函数
+        x = x > 0.008856 ? Math.cbrt(x) : (7.787 * x + 16 / 116);
+        y = y > 0.008856 ? Math.cbrt(y) : (7.787 * y + 16 / 116);
+        z = z > 0.008856 ? Math.cbrt(z) : (7.787 * z + 16 / 116);
+        
+        const L = (116 * y) - 16;
+        const a = 500 * (x - y);
+        const b_val = 200 * (y - z);
+        
+        return [L, a, b_val];
+    }
+
+    // 将 HEX 转换为 Lab
+    function hexToLab(hex) {
+        const rgb = hexToRgb(hex);
+        return rgbToLab(rgb);
+    }
+
+    // CIEDE2000 色差算法实现
+    function deltaE2000(lab1, lab2) {
+        // 参数设定
+        const kL = 1, kC = 1, kH = 1;
+        
+        const [L1, a1, b1] = lab1;
+        const [L2, a2, b2] = lab2;
+        
+        const avgL = (L1 + L2) / 2;
+        
+        const C1 = Math.sqrt(a1 * a1 + b1 * b1);
+        const C2 = Math.sqrt(a2 * a2 + b2 * b2);
+        const avgC = (C1 + C2) / 2;
+        
+        const G = 0.5 * (1 - Math.sqrt(Math.pow(avgC, 7) / (Math.pow(avgC, 7) + Math.pow(25, 7))));
+        
+        const a1Prime = (1 + G) * a1;
+        const a2Prime = (1 + G) * a2;
+    
+        const C1Prime = Math.sqrt(a1Prime * a1Prime + b1 * b1);
+        const C2Prime = Math.sqrt(a2Prime * a2Prime + b2 * b2);
+        
+        const avgCPrime = (C1Prime + C2Prime) / 2;
+        
+        let h1Prime = Math.atan2(b1, a1Prime);
+        if (h1Prime < 0) h1Prime += 2 * Math.PI;
+        let h2Prime = Math.atan2(b2, a2Prime);
+        if (h2Prime < 0) h2Prime += 2 * Math.PI;
+        
+        let dhPrime;
+        if (Math.abs(h1Prime - h2Prime) > Math.PI) {
+            dhPrime = h2Prime - h1Prime - Math.sign(h2Prime - h1Prime) * 2 * Math.PI;
+        } else {
+            dhPrime = h2Prime - h1Prime;
+        }
+        
+        const deltaHPrime = 2 * Math.sqrt(C1Prime * C2Prime) * Math.sin(dhPrime / 2);
+        const deltaLPrime = L2 - L1;
+        const deltaCPrime = C2Prime - C1Prime;
+    
+        let avgHPrime;
+        if (Math.abs(h1Prime - h2Prime) > Math.PI) {
+            avgHPrime = (h1Prime + h2Prime + 2 * Math.PI) / 2;
+        } else {
+            avgHPrime = (h1Prime + h2Prime) / 2;
+        }
+        
+        const T = 1 -
+            0.17 * Math.cos(avgHPrime - Math.PI / 6) +
+            0.24 * Math.cos(2 * avgHPrime) +
+            0.32 * Math.cos(3 * avgHPrime + Math.PI / 30) -
+            0.20 * Math.cos(4 * avgHPrime - 21 * Math.PI / 60);
+        
+        const deltaTheta = (30 * Math.PI / 180) * Math.exp(-Math.pow((avgHPrime * 180 / Math.PI - 275) / 25, 2));
+        
+        const R_C = 2 * Math.sqrt(Math.pow(avgCPrime, 7) / (Math.pow(avgCPrime, 7) + Math.pow(25, 7)));
+        
+        const S_L = 1 + ((0.015 * Math.pow(avgL - 50, 2)) / Math.sqrt(20 + Math.pow(avgL - 50, 2)));
+        const S_C = 1 + 0.045 * avgCPrime;
+        const S_H = 1 + 0.015 * avgCPrime * T;
+        
+        const R_T = -Math.sin(2 * deltaTheta) * R_C;
+        
+        const deltaE = Math.sqrt(
+            Math.pow(deltaLPrime / (kL * S_L), 2) +
+            Math.pow(deltaCPrime / (kC * S_C), 2) +
+            Math.pow(deltaHPrime / (kH * S_H), 2) +
+            R_T * (deltaCPrime / (kC * S_C)) * (deltaHPrime / (kH * S_H))
+        );
+        
+        return deltaE;
+    }
+
+    // 根据中心区域的 HEX 颜色，在 color_tone_dict 中寻找距离最近的颜色，返回对应的 tone 值（例如 "C-b"）
+    function findClosestColor(base_hex, color_tone_dict) {
+        const base_lab = hexToLab(base_hex);
+        let best_color = null;
+        let best_distance = Infinity;
+        for (let hex_val in color_tone_dict) {
+            const lab = hexToLab(hex_val);
+            const d = deltaE2000(base_lab, lab);
+            if (d < best_distance) {
+            best_distance = d;
+            best_color = hex_val;
+            }
+        }
+        // 返回对应的 tone 值
+        return color_tone_dict[best_color];
+    }
+
+    /******************************************
+     * 主程序逻辑
+     ******************************************/
+    let clickCount = 0;
+    let currentImage = new Image();
+    const imageInput = document.getElementById("imageUpload");
+    const canvas = document.getElementById("imageCanvas");
+    const ctx = canvas.getContext("2d");
+    const lilyCodePre = document.getElementById("lilypondCode");
+    
+    
+    imageInput.addEventListener("change", function(event) {
+      const file = event.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        currentImage.onload = function() {
+          // 根据设备尺寸调整画布：手机屏幕宽度-50px，电脑端固定1000px
+          const screenWidth = window.innerWidth;
+          let canvasWidth = 1000;
+          if(screenWidth < 1100) canvasWidth = screenWidth - 50;
+          const scale = canvasWidth / currentImage.width;
+          canvas.width = canvasWidth;
+          canvas.height = currentImage.height * scale;
+          ctx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
+          // 图片加载完成后显示 canvas 和 Clear 按钮
+          canvas.style.display = "block";
+          document.getElementById("clearButton").style.display = "inline-block";
+        }
+        currentImage.src = e.target.result;
+      }
+      reader.readAsDataURL(file);
+    });
+    
+    canvas.addEventListener("click", function(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      processClickedRegion(x, y);
+    });
+    
+    function processClickedRegion(x, y) {
+        const regionSize = 50;
+        const halfRegion = regionSize / 2;
+        let regionX = Math.max(0, x - halfRegion);
+        let regionY = Math.max(0, y - halfRegion);
+        if(regionX + regionSize > canvas.width) regionX = canvas.width - regionSize;
+        if(regionY + regionSize > canvas.height) regionY = canvas.height - regionSize;
+        
+        // 增加点击编号
+        clickCount++;
+        // 在原图上绘制边框（红色，线宽为 2）
+        ctx.strokeStyle = "#D0104C";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(regionX, regionY, regionSize, regionSize);
+        
+
+        // 绘制编号文本，位置在边框右侧略偏上
+        ctx.fillStyle = "#D0104C";
+        ctx.font = "16px Arial";
+        ctx.fillText(clickCount, regionX + regionSize + 5, regionY + 16);
+        
+        // 获取 50×50 区域图像数据
+        const regionData = ctx.getImageData(regionX, regionY, regionSize, regionSize);
+        const avgColor = computeAverageColor(regionData);
+        console.log("区域平均颜色:", avgColor);
+        
+        // 根据平均颜色判断调性（未匹配则默认 "C-b"）
+        // const toneKey = COLOR_TONE_DICT[avgColor.hex] || "C-b";
+        const toneKey = findClosestColor(avgColor.hex, COLOR_TONE_DICT);
+        const toneParams = COLOR_TO_TONE_MAP[toneKey];
+        console.log("调性参数:", toneParams);
+        
+        // 将 50×50 区域拆分为 4 个 grid（2×2）
+        const cellSize = 25;
+        let allGridNotes = [];
+        // 顺序：左上、右上、左下、右下
+        for(let row = 0; row < 2; row++) {
+            for(let col = 0; col < 2; col++) {
+                let cellX = regionX + col * cellSize;
+                let cellY = regionY + row * cellSize;
+                let cellData = ctx.getImageData(cellX, cellY, cellSize, cellSize);
+                let gridNotes = selectNotesForGrid(cellData, toneParams.scale);
+                allGridNotes = allGridNotes.concat(gridNotes);
+            }
+        }
+        console.log("所有grid音符（合并前）:", allGridNotes);
+      
+        // 合并相邻同音符
+        let mergedNotes = mergeNotes(allGridNotes);
+        console.log("合并后的音符序列:", mergedNotes);
+
+        let totalBeats = mergedNotes.reduce((sum, note) => sum + note.duration, 0);
+        if(totalBeats < 4) {
+            let missing = 4 - totalBeats;
+            mergedNotes.push({ pitch: "r", duration: missing });
+            } else if(totalBeats > 4) {
+            let diff = totalBeats - 4;
+            mergedNotes[mergedNotes.length - 1].duration -= diff;
+        }
+        console.log("调整后的合并音符序列，总拍数应为4:", mergedNotes);
+
+        // 调用 expandNotes 将合并后的音符序列拆分成合法的时值
+        let expandedNotes = expandNotes(mergedNotes);
+        console.log("拆分后的音符序列:", expandedNotes);
+      
+        // 根据区域内复杂度调整 tempo（与原逻辑相同）
+        let complexities = [];
+        for(let row = 0; row < 2; row++) {
+            for(let col = 0; col < 2; col++) {
+            let cellData = ctx.getImageData(regionX + col * cellSize, regionY + row * cellSize, cellSize, cellSize);
+            complexities.push(computeComplexity(cellData));
+            }
+        }
+        let normalizedComplexities = normalizeComplexityScores(complexities);
+        let avgNormalized = normalizedComplexities.reduce((a, b) => a + b, 0) / normalizedComplexities.length;
+        let adjustedTempo = Math.round(toneParams.tempo + avgNormalized * 20);
+        console.log("调整后的 tempo:", adjustedTempo);
+      
+
+        // 生成并显示 LilyPond 源代码
+        const lilyCode = generateLilyPondCode(expandedNotes, toneParams, adjustedTempo);
+        // lilyCodePre.textContent = lilyCode;
+        // 渲染五线谱
+        renderNotation(expandedNotes, toneParams, adjustedTempo);
+      
+        // 播放声音
+        // playNotes(expandedNotes, adjustedTempo);
+        playNotesWithSampler(expandedNotes, toneParams, adjustedTempo);
+    }
+
+    // “Clear” 按钮事件：清除画布并重绘原图，同时重置编号
+    document.getElementById("clearButton").addEventListener("click", function() {
+        if (!currentImage.src) return;
+        // 清除整个画布
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // 重绘原始图片
+        ctx.drawImage(currentImage, 0, 0, canvas.width, canvas.height);
+        // 重置点击编号
+        clickCount = 0;
+    });
+
+    
+  </script>
+
+</body>
+</html>
