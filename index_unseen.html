@@ -267,6 +267,17 @@
       #imageCanvas, #lilypondContainer, #lilypondCode {
         width: calc(100vw - 50px);
       }
+      #sidebar {
+        height: calc(100vh - 40px);
+        padding-bottom: 100px;  /* 减少内边距 */
+        /* 如果内容太多，也可以添加滚动条 */
+        overflow-y: auto;
+      }
+      /* 调整底部导航的外边距 */
+      .nav-bottom {
+        margin-top: auto;  /* 保持推到底部 */
+        margin-bottom: 200px;  /* 减少底部留白 */
+      }
       footer {
         position: fixed;
         bottom: 0;
@@ -298,6 +309,7 @@
   </div>
 </div>
         <button id="openSidebar">&#9776;</button>
+  <div class="content">
   <h1>Unseen Rhapsody</h1>
   <p>Hearing the colors unseen</p>
   <label for="imageUpload" class="custom-file-upload">
@@ -313,6 +325,7 @@
   <!-- <h3>LilyPond Source Code</h3> -->
   <pre id="lilypondCode"></pre>
 
+</div>
   <footer>
     © 2025 Blossound. All rights reserved.
   </footer>
