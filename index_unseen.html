@@ -29,7 +29,7 @@
     }
     .content {
       flex: 1;
-      padding: 20px;
+      padding: 40px 20px 20px 20px;
     }
     /* footer 固定在页面最下方 */
     footer {
@@ -1105,7 +1105,7 @@
 
     // 2. 播放函数：使用 Tone.js Sampler 播放扩展后的音符序列
     // ---------------------------
-    function playNotesWithSampler(expandedNotes, toneParams, tempo) {
+    async function playNotesWithSampler(expandedNotes, toneParams, tempo) {
       // 根据 toneParams.base_instrument 选择采样器
       let sampler;
       if (toneParams.base_instrument === "Acoustic Grand Piano") {
@@ -1117,8 +1117,12 @@
       }
       
       // 在第一次播放前需确保 Tone.js 已经启动（用户交互后执行此操作）
-      Tone.start();
-      
+      if (Tone.context.state !== "running") {
+        await Tone.start();
+        console.log("AudioContext is now started");
+      }
+  
+
       let now = Tone.now();
       let t = now;
       const beatSec = 60 / tempo;  // 每拍时长（秒）
