@@ -1006,40 +1006,56 @@
         return pattern;
     }
 
-    // 修改后的 selectNotesForGrid 函数
     function selectNotesForGrid(cellData, baseScale) {
-        // 计算该 cell 的平均颜色
-        const avgColor = computeAverageColor(cellData);
-        const avgHSV = rgbToHsv(avgColor.r, avgColor.g, avgColor.b);
-        // 利用 KMeans 提取 4 个主导颜色（HEX 格式）
-        const dominantHexes = extractDominantColors(cellData, 4);
-        let dominantNotes = [];
-        dominantHexes.forEach(hex_color => {
-            let rgb = hexToRgb(hex_color);
-            let domHSV = rgbToHsv(rgb[0], rgb[1], rgb[2]);
-            let hue_diff = domHSV[0] - avgHSV[0];
-            let sat_diff = domHSV[1] - avgHSV[1];
-            let diff = hue_diff * 1.0 + sat_diff * 0.5;
-            let factor = 30.0;
-            let offset = Math.round(diff / factor);
-            let base_index = Math.floor(baseScale.length / 2);
-            let note_index = base_index + offset;
-            note_index = Math.max(0, Math.min(note_index, baseScale.length - 1));
-            let note = baseScale[note_index];
-            dominantNotes.push(note);
-        });
-        // 动态生成节奏模式：根据当前 cell 的图像数据生成一个时值数组，其和为 1 拍
-        let pattern = generateRhythmPattern(cellData);
-        // 根据生成的模式为每个音符分配音高
-        let n = pattern.length;
-        let notesForGrid = [];
-        for (let i = 0; i < n; i++) {
-            // 这里采用循环赋值，若 pattern 的长度大于 dominantNotes 数量，则循环使用已有音高
-            notesForGrid.push({ pitch: dominantNotes[i % dominantNotes.length], duration: pattern[i] });
+      // 计算该 cell 的平均颜色
+      const avgColor = computeAverageColor(cellData);
+      const avgHSV = rgbToHsv(avgColor.r, avgColor.g, avgColor.b);
+      console.log("avgHSV:", avgHSV);
+        
+      
+      // 利用 KMeans 提取 2 个主导颜色，假设返回的格式为：
+      // [ { hex: "#RRGGBB", proportion: 0.6 }, { hex: "#RRGGBB", proportion: 0.4 } ]
+      const dominantColors = extractDominantColors(cellData, 3);
+      let totalCount = dominantColors.reduce((sum, obj) => sum + obj.count, 0);
+      
+      let dominantNotes = [];
+      
+      dominantColors.forEach(colorObj => {
+        // 将 HEX 转为 RGB，再转为 HSV
+        let rgb = hexToRgb(colorObj.hex);
+        let domHSV = rgbToHsv(rgb[0], rgb[1], rgb[2]);
+        console.log("domHSV:", domHSV);
+        
+        // 根据平均颜色计算色差（使用 HSV 中的 hue 和 saturation）
+        let hue_diff = domHSV[0] - avgHSV[0];
+
+        let sat_diff = domHSV[1] - avgHSV[1];
+        let diff = hue_diff * 1.0 + sat_diff * 0.5;
+        //　console.log("hue_diff:", domHSV[0], avgHSV[0], hue_diff, "sat_diff:", domHSV[1], sat_diff);
+        
+        // 根据一个比例因子计算偏移量
+        let factor = 30.0;
+        let offset = Math.round(diff / factor);
+        
+        // 以 baseScale 的中间音作为基础，然后加上偏移量
+        let base_index = Math.floor(baseScale.length / 2);
+        let note_index = base_index + offset;
+        note_index = Math.max(0, Math.min(note_index, baseScale.length - 1));
+        let pitch = baseScale[note_index];
+
+        let proportion = colorObj.count / totalCount;
+        let duration = proportion;
+        if (duration >= 0.125){
+          dominantNotes.push({ pitch: pitch, duration: duration });
         }
-        console.log("Grid notes:", notesForGrid);
-        return notesForGrid;
+          
+      });
+      
+      console.log("Grid notes:", dominantNotes);
+      dominantNotes = adjustLeftHandChords(dominantNotes, 1);
+      return dominantNotes;
     }
+
 
     // 将一个时值拆分为合法的 LilyPond 时值列表
     function splitDuration(duration) {
@@ -1408,7 +1424,7 @@
         let hue_diff = domHSV[0] - avgHSV[0];
         let sat_diff = domHSV[1] - avgHSV[1];
         let diff = hue_diff * 0.8 + sat_diff * 0.3;
-        let factor = 50.0;
+        let factor = 30.0;
         let offset = Math.round(diff / factor);
         let base_index = Math.floor(baseScale.length / 2);
         let note_index = base_index + offset;
@@ -1417,11 +1433,13 @@
         // 计算该颜色的占比
         let proportion = obj.count / totalCount;
         let duration = proportion * totalBeats;
-        chordNotes.push({ pitch: pitch, duration: duration });
+        if (duration >= 0.25){
+          chordNotes.push({ pitch: pitch, duration: duration });
+        }
       });
       console.log(chordNotes)
       // 合并相邻相同音符的时值
-      chordNotes = mergeNotes(chordNotes);
+      //　chordNotes = mergeNotes(chordNotes);
       console.log(chordNotes)
       // 调整左手和弦部分的时值，使每个时值都是 0.125 的倍数，且总拍数为 totalBeats
       chordNotes = adjustLeftHandChords(chordNotes, totalBeats);
@@ -2103,7 +2121,7 @@
         console.log("调整后的合并音符序列，总拍数应为4:", mergedNotes);
 
         // 调用 expandNotes 将合并后的音符序列拆分成合法的时值
-        let finalRightNotes = expandNotes(mergedNotes);
+        let finalRightNotes = expandNotes(allGridNotes);
         console.log("拆分后的右手音符序列:", finalRightNotes);
 
         // 生成左手部分：以点击处为中心的100×100区域
@@ -2116,8 +2134,8 @@
         const regionData100 = ctx.getImageData(leftX, leftY, leftRegionSize, leftRegionSize);
         let leftNotes = generateLeftHandChords(regionData100, toneParams.scale, 4);
         console.log("左手和弦部分:", leftNotes);
-        let mergedLeft = mergeNotes(leftNotes);
-        let finalLeftChords = expandNotes(mergedLeft);
+        // let mergedLeft = mergeNotes(leftNotes);
+        let finalLeftChords = expandNotes(leftNotes);
         console.log("拆分后的左手和弦部分:", finalLeftChords);
       
         // 根据区域内复杂度调整 tempo（与原逻辑相同）
