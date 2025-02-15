@@ -77,7 +77,7 @@ def decide_deep_params(deep_vec):
     cluster_centers = {}
     offsets = np.linspace(-0.5, 0.5, len(all_keys))
     for i, k in enumerate(all_keys):
-        center = np.random.randn(512)*0.1 + offsets[i]
+        center = np.random.randn(1280)*0.1 + offsets[i]
         cluster_centers[k] = center
 
     best_key = None
