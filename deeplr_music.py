@@ -25,6 +25,9 @@ import torchvision.transforms as T
 import torchvision.models as models
 from torchvision.models import MobileNet_V2_Weights
 import subprocess
+import pretty_midi
+
+
 
 #########################################################
 # A. 深度特征提取与简单分类/回归 (示例)
@@ -148,6 +151,7 @@ def set_deterministic_seed(deep_vec):
     """
     s = hash(deep_vec.tobytes()) & 0xffffffff
     random.seed(s)
+    np.random.seed(s)
 
 #########################################################
 # D. 对位与和弦生成相关函数
@@ -517,18 +521,23 @@ def convert_key_for_lily(key):
     return mapping.get(k, k)
 
 def convert_ly_to_pdf(ly_file, output_dir=None):
-    if not os.path.isfile(ly_file):
-        raise FileNotFoundError(f"找不到 {ly_file}")
+    # 将输入路径转换为绝对路径
+    ly_file_abs = os.path.abspath(ly_file)
+    if not os.path.isfile(ly_file_abs):
+        raise FileNotFoundError(f"找不到 {ly_file_abs}")
+    
     if output_dir:
-        os.makedirs(output_dir, exist_ok=True)
-        base_name = os.path.splitext(os.path.basename(ly_file))[0]
-        out_prefix = os.path.join(output_dir, base_name)
-        command = ["lilypond", "-fpdf", "-o", out_prefix, ly_file]
+        # 将输出目录也转换为绝对路径
+        output_dir_abs = os.path.abspath(output_dir)
+        os.makedirs(output_dir_abs, exist_ok=True)
+        base_name = os.path.splitext(os.path.basename(ly_file_abs))[0]
+        out_prefix = os.path.join(output_dir_abs, base_name)
+        command = ["lilypond", "-fpdf", "-o", out_prefix, ly_file_abs]
         pdf_file = f"{out_prefix}.pdf"
     else:
-        base_name = os.path.splitext(os.path.basename(ly_file))[0]
+        base_name = os.path.splitext(os.path.basename(ly_file_abs))[0]
         pdf_file = f"{base_name}.pdf"
-        command = ["lilypond", "-fpdf", ly_file]
+        command = ["lilypond", "-fpdf", ly_file_abs]
 
     try:
         subprocess.run(command, check=True)
@@ -537,6 +546,105 @@ def convert_ly_to_pdf(ly_file, output_dir=None):
         print("LilyPond转换失败.")
         return None
     return pdf_file
+
+def convert_mid_to_mp3(mid_path, output_mp3, sound_font="FluidR3_GM.sf2"):
+    """
+    将 mid_path 指定的 MIDI 文件转换为 MP3 文件，
+    使用 sound_font 指定的 SoundFont 文件进行音频合成，
+    转换完成后删除中间生成的 WAV 文件和原 MIDI 文件。
+    """
+    # 生成中间 WAV 文件路径（例如 input.mid -> input.wav）
+    wav_path = os.path.splitext(mid_path)[0] + ".wav"
+    
+    # 利用 FluidSynth 将 MIDI 转换为 WAV
+    fs = FluidSynth(sound_font)
+    print(f"Converting {mid_path} to WAV using SoundFont {sound_font} ...")
+    fs.midi_to_audio(mid_path, wav_path)
+    print(f"WAV file generated: {wav_path}")
+    
+    # 利用 pydub 将 WAV 转换为 MP3
+    print(f"Converting {wav_path} to MP3: {output_mp3} ...")
+    audio = AudioSegment.from_wav(wav_path)
+    audio.export(output_mp3, format="mp3")
+    print(f"MP3 file generated: {output_mp3}")
+    
+    # 删除中间的 WAV 文件和原始 MIDI 文件
+    os.remove(wav_path)
+    os.remove(mid_path)
+    print(f"Deleted intermediate files: {wav_path} and {mid_path}")
+
+def from_midi_to_mp3(midi_file):
+    """
+    将 MIDI 文件转换为 WAV/MP3 的逻辑示例
+    假设你通过 fluidsynth + ffmpeg/ffmpeg 来实现
+    """
+    wav_file = midi_file.replace(".mid", ".wav")
+    mp3_file = midi_file.replace(".mid", ".mp3")
+
+    # 1) 用 fluidsynth 生成 WAV
+    subprocess.run([
+        "fluidsynth",
+        "-ni",
+        "/usr/share/sounds/sf2/FluidR3_GM.sf2", 
+        midi_file,
+        "-F", wav_file,
+        "-r", "44100"
+    ], check=True)
+
+    # 2) 用 ffmpeg 将 WAV 转成 MP3
+    subprocess.run([
+        "ffmpeg",
+        "-y",
+        "-i", wav_file,
+        "-acodec", "libmp3lame",
+        mp3_file
+    ], check=True)
+
+    print(f"已生成 MP3 文件: {mp3_file}")
+
+def convert_to_type0(pretty_midi_obj, output_filename, left_program_index, right_program_index):
+    """
+    Convert a PrettyMIDI object to Type 0 while preserving instrument information
+    for left and right parts.
+    左手乐器（名称中含 "Left"）将设为 channel 1 和 left_program_index，
+    右手乐器（名称中含 "Right"）设为 channel 2 和 right_program_index.
+    """
+
+    type0_midi = pretty_midi.PrettyMIDI()
+    merged_instr = pretty_midi.Instrument(program=0, name="MergedTrack", is_drum=False)
+
+    for instr in pretty_midi_obj.instruments:
+        print(f"Copying notes from {instr.name} ({len(instr.notes)} notes)")
+        if "Left" in instr.name:
+            # 保留左手乐器信息
+            instr.program = left_program_index
+            for note in instr.notes:
+                note.channel = 1  # 左声部设为 channel 1
+        elif "Right" in instr.name:
+            # 保留右手乐器信息
+            instr.program = right_program_index
+            for note in instr.notes:
+                note.channel = 2  # 右声部设为 channel 2
+        else:
+            # 如果不是左右声部，默认保持不变
+            pass
+
+        merged_instr.notes.extend(instr.notes)
+
+    if len(merged_instr.notes) == 0:
+        print("[ERROR] No notes found in converted MIDI!")
+    else:
+        print(f"[INFO] Successfully merged {len(merged_instr.notes)} notes.")
+
+    merged_instr.notes.sort(key=lambda note: note.start)
+    type0_midi.instruments.append(merged_instr)
+    type0_midi.write(output_filename)
+    print(f"[INFO] Converted to Type 0 MIDI: {output_filename}")
+
+    print(f"Number of tracks: {len(type0_midi.instruments)}")
+    for i, instrument in enumerate(type0_midi.instruments):
+        print(f"Track {i}: {instrument.name}, Program: {instrument.program}")
+
 
 #########################################################
 # G. 主入口: 生成 MIDI, LY, PDF
@@ -576,7 +684,6 @@ def generate_music(
     # a) 读取图像与 HSV 均值
     img_bgr = cv2.imread(img_path)
     img_name = os.path.splitext(os.path.basename(img_path))[0]
-    os.makedirs(os.path.join(out_pdf_dir, img_name), exist_ok=True)
 
     if img_bgr is None:
         raise FileNotFoundError(f"无法读取 {img_path}")
@@ -587,6 +694,7 @@ def generate_music(
     
     # b) 提取深度特征
     model = load_mobilenet_v2()
+    # model = load_resnet18_model()
     deep_vec = extract_deep_features_bgr(img_bgr, model)
     
     # 固定随机种子，确保相同图像生成相同随机序列
@@ -673,6 +781,7 @@ def generate_music(
     
     # f) 写 MIDI 文件
     pm = pretty_midi.PrettyMIDI()
+
     right_instr = pretty_midi.Instrument(program=right_program_index, name="RightHand")
     left_instr  = pretty_midi.Instrument(program=left_program_index, name="LeftHand")
     sec_per_beat = 60.0 / deep_tempo
@@ -693,39 +802,41 @@ def generate_music(
     pm.instruments.append(right_instr)
     pm.instruments.append(left_instr)
     pm.write(out_midi)
-    print("[INFO] MIDI 写入:", out_midi)
-    
+    from_midi_to_mp3(out_midi)
+
+    convert_to_type0(pm, out_midi, left_program_index, right_program_index)
+
     # g) 生成 LilyPond 文本并转换为 PDF
     merged_right = merge_measures(right_all)
     merged_left = merge_measures(left_all)
     right_lily = measures_to_lily_merged(merged_right)
     left_lily = measures_to_lily_merged(merged_left)
     lily_root = convert_key_for_lily(deep_root)
-    lily_content = f"""\\version "2.22.1"
-\\header {{
-  title = "{img_name}"
-  % composer = "Yao."
-}}
-\\score {{
-  \\new PianoStaff <<
-    \\new Staff = "right" {{
-      \\clef treble
-      \\key {lily_root} \\{deep_scale}
-      \\tempo 4={deep_tempo}
-      {right_lily}
-      \\bar "|."
-    }}
-    \\new Staff = "left" {{
-      \\clef bass
-      \\key {lily_root} \\{deep_scale}
-      {left_lily}
-      \\bar "|."
-    }}
-  >>
-  \\layout {{}}
-  \\midi {{}}
-}}
-"""
+    lily_content = f"""\\version "2.24.1"
+        \\header {{
+        title = "{img_name}"
+        % composer = "Yao."
+        }}
+        \\score {{
+        \\new PianoStaff <<
+            \\new Staff = "right" {{
+            \\clef treble
+            \\key {lily_root} \\{deep_scale}
+            \\tempo 4={deep_tempo}
+            {right_lily}
+            \\bar "|."
+            }}
+            \\new Staff = "left" {{
+            \\clef bass
+            \\key {lily_root} \\{deep_scale}
+            {left_lily}
+            \\bar "|."
+            }}
+        >>
+        \\layout {{}}
+        \\midi {{}}
+        }}
+        """
     with open(out_ly, "w", encoding="utf-8") as f:
         f.write(lily_content)
     print("[INFO] LilyPond 写入:", out_ly)
@@ -746,8 +857,6 @@ def generate_music(
 
 
     
-
-
 if __name__ == "__main__":
 
     import argparse
@@ -774,8 +883,8 @@ if __name__ == "__main__":
     generate_music(
         img_path=args.img_path,
         length=args.length,
-        out_midi=os.path.join(args.out_pdf_dir, img_name, f"{img_name}.mid"),
-        out_ly=os.path.join(args.out_pdf_dir, img_name, f"{img_name}.ly"),
+        out_midi=os.path.join(args.out_pdf_dir, f"{img_name}.mid"),
+        out_ly=os.path.join(args.out_pdf_dir, f"{img_name}.ly"),
         out_pdf_dir=args.out_pdf_dir,
         method=args.method,
         pattern_name=args.pattern_name,

@@ -1,4 +1,5 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, render_template
+
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import os
@@ -9,7 +10,7 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 UPLOAD_FOLDER = 'figures'
-OUTPUT_FOLDER = 'outputs'
+OUTPUT_FOLDER = 'app_v2/outputs'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
@@ -17,6 +18,8 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 # 静态文件路由，用于访问 /outputs/<unique_id>/<image_name>/<filename>
 @app.route("/outputs/<unique_id>/<image_name>/<filename>")
 def serve_output_file(unique_id, image_name, filename):
+    full_path = os.path.join(OUTPUT_FOLDER, unique_id, image_name, filename)
+    print("Serving file from:", full_path)
     return send_from_directory(
         directory=os.path.join(OUTPUT_FOLDER, unique_id, image_name),
         path=filename
@@ -26,7 +29,8 @@ def serve_output_file(unique_id, image_name, filename):
 
 @app.route("/")
 def index():
-    return "Hello, this is the backend!"
+    return render_template("index_deeplr.html")
+    # return "Hello, this is the backend!"
 
 
 @app.route("/upload", methods=["POST"])
@@ -95,17 +99,21 @@ def upload_file():
 
     # 收集输出目录下的资源
     png_files = []
+    mid_files = []
     mp3_files = []
     pdf_files = []
+
     if os.path.exists(output_subdir):
         for f in sorted(os.listdir(output_subdir)):
             ext_lower = f.lower()
             if ext_lower.endswith(".png"):
                 png_files.append(f)
-            elif ext_lower.endswith(".mp3"):
-                mp3_files.append(f)
+            elif ext_lower.endswith(".mid"):
+                mid_files.append(f)
             elif ext_lower.endswith(".pdf"):
                 pdf_files.append(f)
+            elif ext_lower.endswith(".mp3"):
+                mp3_files.append(f)
 
     # 分组（如果有多张 PNG 需要分组）
     groups = {}
@@ -120,20 +128,25 @@ def upload_file():
         [f"{base_url}outputs/{unique_id}/{image_name}/{fname}" for fname in group]
         for group in grouped_list
     ]
-    mp3_file_urls = [
+    mid_file_urls = [
         f"{base_url}outputs/{unique_id}/{image_name}/{fname}"
-        for fname in mp3_files
+        for fname in mid_files
     ]
     pdf_file_urls = [
         f"{base_url}outputs/{unique_id}/{image_name}/{fname}"
         for fname in pdf_files
     ]
+    mp3_file_urls = [
+        f"{base_url}outputs/{unique_id}/{image_name}/{fname}"
+        for fname in mp3_files
+    ]
 
     return jsonify({
         "success": True,
         "pngFiles": png_file_urls,
+        "midFiles": mid_file_urls,
+        "pdfFiles": pdf_file_urls,
         "mp3Files": mp3_file_urls,
-        "pdfFiles": pdf_file_urls
     })
 
 
