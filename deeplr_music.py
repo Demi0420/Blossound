@@ -34,12 +34,17 @@ def load_resnet18_model():
     """
     加载预训练的 ResNet18, 将 fc 替换为 Identity, 输出 512 维特征向量
     """
-    # model = models.resnet18(pretrained=True)
-    model = models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT)
+    model = models.resnet18(pretrained=True)
     model.fc = nn.Identity()
     model.eval()
     scripted_model = torch.jit.script(model)
     return scripted_model
+
+def load_mobilenet_v2():
+    model = models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT)
+    model.classifier = nn.Identity()
+    model.eval()
+    return model
 
 def extract_deep_features_bgr(image_bgr, model):
     """
@@ -580,7 +585,7 @@ def generate_music(
     v_mean = np.mean(hsv[:, :, 2])
     
     # b) 提取深度特征
-    model = load_resnet18_model()
+    model = load_mobilenet_v2()
     deep_vec = extract_deep_features_bgr(img_bgr, model)
     
     # 固定随机种子，确保相同图像生成相同随机序列
