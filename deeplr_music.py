@@ -44,7 +44,8 @@ def load_mobilenet_v2():
     model = models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT)
     model.classifier = nn.Identity()
     model.eval()
-    return model
+    scripted_model = torch.jit.script(model)
+    return scripted_model
 
 def extract_deep_features_bgr(image_bgr, model):
     """
@@ -732,6 +733,19 @@ def generate_music(
     pdf_file = convert_ly_to_pdf(out_ly, output_dir=out_pdf_dir)
     if pdf_file:
         print("[INFO] 生成PDF:", pdf_file)
+
+    png_file = pdf_file[:-4] + ".png"
+    subprocess.run(
+        ["convert", 
+        "-density", "300", 
+        pdf_file, 
+        png_file
+    ],check=True)
+    if png_file:
+        print("[INFO] 生成PNG:", png_file)
+
+
+    
 
 
 if __name__ == "__main__":
