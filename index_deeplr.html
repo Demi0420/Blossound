@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <title>Music Generation Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.39/Tone.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.27/build/Midi.min.js"></script>
   <style>
     body { font-family: Arial, sans-serif; margin: 20px; }
     label { display: inline-block; width: 200px; vertical-align: top; margin-bottom: 10px; }
@@ -242,15 +245,84 @@
 
         // 显示 MP3 播放器
         if (mp3Files[index]) {
-        const audio = document.createElement("audio");
-        audio.controls = true;
-        audio.src = mp3Files[index];
-        audio.className = "preview-audio";
-        audio.setAttribute("playsinline", "true");
-        audio.setAttribute("preload", "metadata");
-        displaySection.appendChild(audio);
+            // 使用 fetch 加载 MIDI 文件（这里假设 mp3Files[index] 实际上是 .mid 文件的 URL）
+            fetch(mp3Files[index])
+                .then(response => response.arrayBuffer())
+                .then(data => {
+                // 利用 Tonejs/Midi 解析 MIDI 数据
+                const midi = new Tone.Midi(data);
+                
+                // 创建一个 Tone.Sampler 使用 Salamander 采样库
+                const sampler = new Tone.Sampler({
+                    urls: {
+                    "A0": "A0.mp3",
+                    "C1": "C1.mp3",
+                    "D#1": "Ds1.mp3",
+                    "F#1": "Fs1.mp3",
+                    "A1": "A1.mp3",
+                    "C2": "C2.mp3",
+                    "D#2": "Ds2.mp3",
+                    "F#2": "Fs2.mp3",
+                    "A2": "A2.mp3",
+                    "C3": "C3.mp3",
+                    "D#3": "Ds3.mp3",
+                    "F#3": "Fs3.mp3",
+                    "A3": "A3.mp3",
+                    "C4": "C4.mp3",
+                    "D#4": "Ds4.mp3",
+                    "F#4": "Fs4.mp3",
+                    "A4": "A4.mp3",
+                    "C5": "C5.mp3",
+                    "D#5": "Ds5.mp3",
+                    "F#5": "Fs5.mp3",
+                    "A5": "A5.mp3",
+                    "C6": "C6.mp3",
+                    "D#6": "Ds6.mp3",
+                    "F#6": "Fs6.mp3",
+                    "A6": "A6.mp3",
+                    "C7": "C7.mp3",
+                    "D#7": "Ds7.mp3",
+                    "F#7": "Fs7.mp3",
+                    "A7": "A7.mp3",
+                    "C8": "C8.mp3"
+                    },
+                    release: 1,
+                    baseUrl: "https://tonejs.github.io/audio/salamander/"
+                }).toDestination();
+                
+                // 开始播放前先启动 Tone.Transport
+                Tone.Transport.start();
+                
+                // 获取当前时间，稍微延迟以确保所有采样加载完成
+                const now = Tone.now() + 0.5;
+                
+                // 遍历所有 MIDI 轨道和音符，并安排采样器播放
+                midi.tracks.forEach(track => {
+                    track.notes.forEach(note => {
+                    // note.name 为标准乐谱名称（例如 "C4"），note.duration 为时值，note.time 为起始时间
+                    sampler.triggerAttackRelease(note.name, note.duration, note.time + now, note.velocity);
+                    });
+                });
+            
+            })
+            .catch(error => {
+            console.error("Error loading MIDI:", error);
+            });
         }
 
+        // 显示乐谱图片
+        if (pngFiles[1 - index]) {
+        const images = Array.isArray(pngFiles[1 - index]) ? pngFiles[1 - index] : [pngFiles[1 - index]];
+        const container = document.createElement("div");
+        container.className = "image-container";
+        images.forEach(src => {
+        const img = document.createElement("img");
+        img.src = src;
+        img.alt = "Score Image";
+        container.appendChild(img);
+        });
+        displaySection.appendChild(container);
+        }
 
         
         // 显示 PDF 链接
