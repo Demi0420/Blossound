@@ -83,6 +83,13 @@
   <div id="visualOutputDiv" style="margin-top:20px;"></div>
   
   <script>
+    // 监听文件选择的 change 事件
+    document.getElementById("file").addEventListener("change", function() {
+      // 清空结果区域
+      document.getElementById("resultArea").innerHTML = "";
+      // 清空可视化输出区域
+      document.getElementById("visualOutputDiv").innerHTML = "";
+    });
     // 全局变量
     let midFiles = [];  // 存放 .mid 文件 URL（后端返回）
     let pngFiles = [];  // 存放 PNG 图片 URL

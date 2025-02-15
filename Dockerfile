@@ -17,7 +17,7 @@ WORKDIR /app_v2
 
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
-RUN python -c "import torch; import torchvision; model = torchvision.models.resnet18(weights='ResNet18_Weights.IMAGENET1K_V1'); model.eval()"
+RUN python -c "import torch; from torchvision import models; models.mobilenet_v2(weights='DEFAULT')"
 
 
 COPY . /app_v2

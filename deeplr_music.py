@@ -44,7 +44,9 @@ def load_resnet18_model():
     return scripted_model
 
 def load_mobilenet_v2():
-    model = models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT)
+    model = models.mobilenet_v2()
+    # model = models.mobilenet_v2(weights='DEFAULT')
+    model.load_state_dict(torch.load("mobilenet_v2.pth", map_location="cpu"))
     model.classifier = nn.Identity()
     model.eval()
     scripted_model = torch.jit.script(model)
@@ -80,7 +82,7 @@ def decide_deep_params(deep_vec):
     cluster_centers = {}
     offsets = np.linspace(-0.5, 0.5, len(all_keys))
     for i, k in enumerate(all_keys):
-        center = np.random.randn(1280)*0.1 + offsets[i]
+        center = np.random.randn(1280) * 0.1 + offsets[i]
         cluster_centers[k] = center
 
     best_key = None
@@ -547,31 +549,6 @@ def convert_ly_to_pdf(ly_file, output_dir=None):
         return None
     return pdf_file
 
-def convert_mid_to_mp3(mid_path, output_mp3, sound_font="FluidR3_GM.sf2"):
-    """
-    将 mid_path 指定的 MIDI 文件转换为 MP3 文件，
-    使用 sound_font 指定的 SoundFont 文件进行音频合成，
-    转换完成后删除中间生成的 WAV 文件和原 MIDI 文件。
-    """
-    # 生成中间 WAV 文件路径（例如 input.mid -> input.wav）
-    wav_path = os.path.splitext(mid_path)[0] + ".wav"
-    
-    # 利用 FluidSynth 将 MIDI 转换为 WAV
-    fs = FluidSynth(sound_font)
-    print(f"Converting {mid_path} to WAV using SoundFont {sound_font} ...")
-    fs.midi_to_audio(mid_path, wav_path)
-    print(f"WAV file generated: {wav_path}")
-    
-    # 利用 pydub 将 WAV 转换为 MP3
-    print(f"Converting {wav_path} to MP3: {output_mp3} ...")
-    audio = AudioSegment.from_wav(wav_path)
-    audio.export(output_mp3, format="mp3")
-    print(f"MP3 file generated: {output_mp3}")
-    
-    # 删除中间的 WAV 文件和原始 MIDI 文件
-    os.remove(wav_path)
-    os.remove(mid_path)
-    print(f"Deleted intermediate files: {wav_path} and {mid_path}")
 
 def from_midi_to_mp3(midi_file):
     """
