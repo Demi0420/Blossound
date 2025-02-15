@@ -23,7 +23,7 @@ import torch
 import torch.nn as nn
 import torchvision.transforms as T
 import torchvision.models as models
-import pretty_midi
+from torchvision.models import MobileNet_V2_Weights
 import subprocess
 
 #########################################################
@@ -34,7 +34,8 @@ def load_resnet18_model():
     """
     加载预训练的 ResNet18, 将 fc 替换为 Identity, 输出 512 维特征向量
     """
-    model = models.resnet18(pretrained=True)
+    # model = models.resnet18(pretrained=True)
+    model = models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT)
     model.fc = nn.Identity()
     model.eval()
     scripted_model = torch.jit.script(model)
