@@ -37,7 +37,8 @@ def load_resnet18_model():
     model = models.resnet18(pretrained=True)
     model.fc = nn.Identity()
     model.eval()
-    return model
+    scripted_model = torch.jit.script(model)
+    return scripted_model
 
 def extract_deep_features_bgr(image_bgr, model):
     """

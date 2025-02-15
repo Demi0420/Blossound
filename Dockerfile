@@ -13,12 +13,14 @@ RUN apt-get update && apt-get install -y \
 RUN sed -i 's/<policy domain="coder" rights="none" pattern="PDF" \/>/<policy domain="coder" rights="read|write" pattern="PDF" \/>/g' /etc/ImageMagick-6/policy.xml
 
 
-WORKDIR /app
+WORKDIR /app_v2
 
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
+RUN python -c "from torchvision.models import resnet18; model = resnet18(pretrained=True)"
 
-COPY . /app
+
+COPY . /app_v2
 
 EXPOSE 8080
 
