@@ -367,8 +367,7 @@ ACCOMPANIMENT_PATTERNS = {
         (2.5, "next"),
         (3.0, "middle"),
         (3.5, "next"),
-    ],
-    # ... 可添加更多 pattern ...
+    ]
 }
 
 
@@ -397,6 +396,7 @@ def pick_note_from_chord(chord_pcs_sorted, note_position="lowest", lowestBass=36
         return (octave * 12) + (pc % 12)
 
     def get_base_pitch():
+        nonlocal cyc_idx_dict
         # 按照 note_position 选择一个和弦内的音（仅返回音名 0~11）
         if not chord_pcs_sorted:
             return 0

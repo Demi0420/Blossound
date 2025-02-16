@@ -386,16 +386,26 @@
       body {
         font-size: 18px; /* 增大整体文字大小 */
         margin: 0;
+        padding: 0;
+        width: 100vw;
+        overflow-x: hidden; /* 防止横向滚动条 */
       }
       .wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         min-height: 100vh;
       }
       .container {
+        display: flex;
         flex-direction: column; /* ✅ 在小屏幕时改成纵向排列 */
         align-items: center; /* ✅ 让子元素居中 */
         justify-content: center; /* ✅ 让内容在容器内居中 */
         text-align: center; /* ✅ 确保文本居中 */
-        width: calc(100vw - 50px);
+        width: 100%;
+        max-width: 800px;
+        margin: 0 auto;
       }
       .modal-content {
         width: calc(100vw - 100px); /* 手机屏幕宽度减去100px */
