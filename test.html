@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markov链和弦生成</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vexflow/1.2.93/vexflow-min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #notation {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        svg {
+            margin: 10px;
+        }
+        button {
+            padding: 10px;
+            margin: 10px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Markov链和弦序列 (五线谱 & 音频播放)</h2>
+<button onclick="playMusic()">🎵 播放音乐</button>
+
+<div id="notation"></div>
+
+<script>
+    // 右手音符序列
+    const finalRightNotes = [
+        { pitch: "F#", duration: 0.5 }, { pitch: "F#", duration: 0.125 },
+        { pitch: "E", duration: 0.25 }, { pitch: "E", duration: 0.125 },
+        { pitch: "E", duration: 0.25 }, { pitch: "E", duration: 0.125 },
+        { pitch: "F#", duration: 0.5 }, { pitch: "F#", duration: 0.125 },
+        { pitch: "F#", duration: 0.5 }, { pitch: "F#", duration: 0.125 },
+        { pitch: "F#", duration: 0.25 }, { pitch: "F#", duration: 0.125 },
+        { pitch: "F#", duration: 0.25 }, { pitch: "F#", duration: 0.125 },
+        { pitch: "F#", duration: 0.5 }, { pitch: "F#", duration: 0.125 }
+    ];
+
+    // Markov链生成左手音符
+    const markovChain = {
+        "F#": ["D", "A", "B"],
+        "E": ["C", "G", "A"],
+        "D": ["F#", "B", "G"],
+        "C": ["E", "A", "D"]
+    };
+
+    function generate_dual_voice_measure(rightNotes) {
+        return rightNotes.map(note => {
+            const possibleLeftPitches = markovChain[note.pitch] || ["C", "D", "E"];
+            const leftPitch = possibleLeftPitches[Math.floor(Math.random() * possibleLeftPitches.length)];
+            return { pitch: leftPitch, duration: note.duration };
+        });
+    }
+
+    // 生成左手音符序列
+    const finalLeftNotes = generate_dual_voice_measure(finalRightNotes);
+
+    // 播放音频
+    function playMusic() {
+  // 使用自定义包络参数，让音符更快结束
+  const synth = new Tone.PolySynth(Tone.Synth, {
+    envelope: {
+      attack: 0.005,
+      decay: 0.1,
+      sustain: 0.3,
+      release: 0.1  // 缩短释放时间
+    }
+  }).toDestination();
+
+  let time = Tone.now();
+
+  finalRightNotes.forEach((note, index) => {
+    const leftNote = finalLeftNotes[index];
+
+    // 右手音符立即触发
+    synth.triggerAttackRelease(note.pitch + "4", note.duration * 0.8, time);
+    
+    // 左手音符稍微延迟 0.02 秒触发，避免完全重叠
+    synth.triggerAttackRelease(leftNote.pitch + "3", leftNote.duration * 0.8, time + 0.02);
+
+    // 按照右手的 duration 累加时间
+    time += note.duration;
+  });
+}
+
+    // **修正分小节方法，确保不超过4拍**
+    function splitIntoMeasures(notes) {
+        let measures = [];
+        let currentMeasure = [];
+        let totalBeats = 0;
+
+        notes.forEach(note => {
+            if (totalBeats + note.duration > 4) {
+                measures.push(currentMeasure);
+                currentMeasure = [];
+                totalBeats = 0;
+            }
+            currentMeasure.push(note);
+            totalBeats += note.duration;
+        });
+
+        if (currentMeasure.length > 0) {
+            measures.push(currentMeasure);
+        }
+
+        return measures;
+    }
+
+    // 转换音符格式
+    function convertToVexNotes(notes, clef) {
+        return notes.map(note => {
+            let duration = (note.duration === 0.125) ? "8" :
+                           (note.duration === 0.25) ? "q" :
+                           (note.duration === 0.5) ? "h" : "w";
+
+            return new Vex.Flow.StaveNote({
+                clef: clef,
+                keys: [note.pitch.toLowerCase() + ((clef === "treble") ? "/4" : "/3")],
+                duration: duration
+            });
+        });
+    }
+
+    function drawNotation() {
+        const VF = Vex.Flow;
+        const div = document.getElementById("notation");
+        div.innerHTML = ""; // 清除已有的五线谱
+
+        const rightMeasures = splitIntoMeasures(finalRightNotes);
+        const leftMeasures = splitIntoMeasures(finalLeftNotes);
+
+        rightMeasures.forEach((measure, index) => {
+            const renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
+            renderer.resize(600, 300);
+            const context = renderer.getContext();
+            const stave = new VF.Stave(10, 40, 550);
+            stave.addClef("treble").setContext(context).draw();
+
+            const staveBass = new VF.Stave(10, 140, 550);
+            staveBass.addClef("bass").setContext(context).draw();
+
+            const rightHandNotes = convertToVexNotes(measure, "treble");
+            const leftHandNotes = convertToVexNotes(leftMeasures[index], "bass");
+
+            const voiceRight = new VF.Voice({ num_beats: 4, beat_value: 4 });
+            voiceRight.setStrict(false); // **允许不满 4 拍**
+            voiceRight.addTickables(rightHandNotes);
+
+            const voiceLeft = new VF.Voice({ num_beats: 4, beat_value: 4 });
+            voiceLeft.setStrict(false); // **允许不满 4 拍**
+            voiceLeft.addTickables(leftHandNotes);
+
+            const formatter = new VF.Formatter().joinVoices([voiceRight, voiceLeft]).format([voiceRight, voiceLeft], 500);
+            voiceRight.draw(context, stave);
+            voiceLeft.draw(context, staveBass);
+        });
+    }
+
+    drawNotation();
+</script>
+
+</body>
+</html>

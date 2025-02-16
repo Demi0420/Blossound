@@ -8,7 +8,132 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.39/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.27/build/Midi.min.js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
+    body {
+        font-family: 'Avenir';
+        background-color: #FCFAF2;
+        color: #080808;
+        margin: 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;  /* 垂直居中 */
+        align-items: center;      /* 水平居中 */
+        min-height: 100vh;        /* 至少占满整个视口高度 */
+        text-align: center;       /* 文字居中 */
+    }
+    .wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: calc(100vh - 40px);
+      width: 100%;
+    }
+    .content {
+      flex: 1;
+      padding: 40px 20px 20px 20px;
+    }
+    /* footer 固定在页面最下方 */
+    footer {
+        margin-top: auto;  /* 自动填充顶部空间，将 footer 推到底部 */
+        width: 100%;
+        text-align: center;
+        font-size: 9px;
+        color: #555;
+        padding: 10px 0;
+    }
+    /* 导航侧边栏样式 */
+    #sidebar {
+      font-family: 'Avenir';
+      height: calc(100vh - 40px);
+      width: 250px;
+      position: fixed;
+      left: -270px;
+      top: 0;
+      background-color: #434343;
+      overflow-x: hidden;
+      transition: 0.5s;
+      padding-top: 60px;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+      padding-bottom: 60px;  /* 例如底部再增加40px内边距 */
+    }
+    /* 上半部分导航 */
+    .nav-top ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    /* 下半部分导航 */
+    .nav-bottom {
+      margin-top: auto;  /* 将 nav-bottom 推到最底部 */
+      margin-bottom: 60px;  /* 在底部再留出20px的间距 */
+    }
+
+    .nav-bottom ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    /* 设置 contact 项的字体较小 */
+    .nav-bottom ul li.contact a {
+      font-size: 0.7em;  /* 例如 70% 的默认字号 */
+    }
+    #sidebar ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    #sidebar ul li {
+      padding: 8px 8px 8px 32px;
+      text-align: left;
+    }
+    #sidebar ul li a {
+      color: #fff;
+      text-decoration: none;
+      display: block;
+    }
+    #sidebar ul li a:hover {
+      background-color: #434343;
+    }
+    #openSidebar {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      font-size: 30px;
+      background: none;
+      border: none;
+      color: #434343;
+      cursor: pointer;
+      z-index: 3;
+    }
+    #closeSidebar {
+      position: absolute;
+      top: 20px;
+      right: 25px;
+      font-size: 36px;
+      background: none;
+      border: none;
+      color: #FCFAF2;
+      cursor: pointer;
+    }
+    .container {
+      display: flex;
+      justify-content: space-between; /* 确保左侧和右侧有间距 */
+      align-items: flex-start; /* 让两个部分的顶部对齐 */
+      flex-wrap: wrap; /* ❌ 避免 flex 自动换行 */
+      gap: 0; /* 左右两部分的间距 */
+      width: 100%; /* 确保足够的可用空间 */
+    }
+    /* 左侧内容（表单 + 结果） */
+    .left-section {
+      flex: 1; /* 让左侧部分自动适应 */
+      min-width: 400px;
+    }
+    #uploadForm {
+        width: 100%; /* 让 form 充满 container */
+    }
     .image-container {
       display: flex;
       flex-direction: row;
@@ -20,11 +145,13 @@
       padding: 10px;
     }
     .image-container img {
-      width: 400px;
+      background-color: white;
+      width: 100%;
       height: auto;
       object-fit: cover;
       border-radius: 8px;
       box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+      clip-path: inset(0 round 8px);
     }
     .midi-file-block {
       margin-bottom: 10px;
@@ -32,59 +159,501 @@
     .midi-file-block button {
       margin-right: 10px;
     }
+    /* 隐藏文件输入框（移出视口） */
+    #imageUpload {
+      position: absolute;
+      left: -9999px;
+    }
+    .custom-file-upload {
+      font-family: 'Avenir';
+      display: inline-block;
+      width: 150px;      /* 固定宽度 */
+      height: 50px;      /* 固定高度 */
+      line-height: 50px; /* 设置行高，使文字垂直居中 */
+      text-align: center;/* 文字水平居中 */
+      padding: 0;        /* 如果设置了固定高度，通常需要取消内边距 */
+      cursor: pointer;
+      border: 2px solid #074D8F;
+      border-radius: 8px;
+      background-color: #074D8F;
+      color: #fff;
+      font-size: 16px;
+      transition: background-color 0.3s, border-color 0.3s;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+      margin-top: 5px; /* 避免与侧边栏按钮重叠 */
+      margin-right: 50px;
+      margin-left: 50px;
+    }
+    .custom-file-upload:hover {
+      background-color: #3A8Fb7;
+    }
+    .btn {
+      font-family: 'Avenir';
+      display: inline-block;
+      width: 150px;      /* 固定宽度 */
+      height: 50px;      /* 固定高度 */
+      line-height: 50px; /* 设置行高，使文字垂直居中 */
+      text-align: center;/* 文字水平居中 */
+      padding: 0;        /* 如果设置了固定高度，通常需要取消内边距 */
+      cursor: pointer;
+      border: 2px solid #434343;
+      border-radius: 8px;
+      background-color: #434343;
+      color: #fff;
+      font-size: 16px;
+      margin-right: 50px;
+      margin-top: 5px;
+      margin-left: 50px;
+      transition: background-color 0.3s, border-color 0.3s;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+    }
+    .btn:hover {
+      background-color: #89916B;
+    }
+    #right_program_index {
+    font-family: 'Avenir', sans-serif;
+    }
+
+    /* 弹出框（Modal）样式 */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      width: 400px;
+      height: 600px;
+      background-color: #fff;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+      border-radius: 8px; /* 无圆角 */
+      padding: 20px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-content .scrollContainer {
+      font-size: 14px;
+      overflow-y: auto;
+      flex: 1;
+      text-align: left;
+    }
+    .modal-content p {
+      margin: 5px 0;
+    }
+    .modal-content .centerContent {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      font-size: 14px;
+    }
+    .modal-content .close {
+      position: absolute;
+      top: 14px;
+      right: 10px;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    /* 预览区域样式 */
+    #previewArea {
+      margin-top: 20px;
+      text-align: center;
+    }
+    #previewArea p {
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    #previewArea img {
+      width: 100px;
+      height: auto;
+      border-radius: 4px;
+      box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+    }
+    /* 让整个表单区域整齐 */
+  .form-container {
+      width: 400px; /* 适当设置宽度 */
+      margin: 20px auto; /* 居中 */
+      padding: 20px;
+      border-radius: 10px;
+      background-color: #f9f9f9;
+      box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  /* 统一 div 使其垂直对齐 */
+  .form-container div {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      margin-bottom: 10px;
+  }
+
+  /* label 统一样式 */
+  .form-container label {
+      color: #1C1C1C;
+      /* font-weight: bold;*/
+      font-family: 'Avenir', sans-serif;
+      width: 150px; /* 让 label 统一宽度 */
+      text-align: right; /* 让 label 右对齐 */
+      padding-right: 20px;
+  }
+
+  /* 输入框、下拉框的样式 */
+  .form-container input,
+  .form-container select {
+      width: 220px; /* 让输入框和下拉框对齐 */
+      padding: 5px;
+      border: 1px solid #074D8F;
+      border-radius: 5px;
+      font-size: 14px;
+      font-family: 'Avenir', sans-serif;
+  }
+
+  /* 让禁用的下拉框稍微灰色 */
+  .form-container select:disabled {
+      background-color: #ddd;
+      color: #666;
+  }
+
+  /* 让 select 选项的字体也统一 */
+  .form-container select option {
+      font-family: 'Avenir', sans-serif;
+  }
+
+  /* 鼠标悬停时的效果 */
+  .form-container input:hover,
+  .form-container select:hover {
+      border-color: #05376D;
+      background-color: #eef5ff;
+  }
+
+
+  #visualOutputDiv {
+    display: flex;
+    flex-direction: column; /* 让内容垂直排列 */
+    min-width: 300px;
+    max-width: 50%; /* 避免太宽 */
+    padding: 0;
+    align-items: center; /* 让所有内容居中 */
+    justify-content: center;
+  }
+  /* 当 #visualOutputDiv 为空时，强制 .left-section 占据整个父容器 */
+  #visualOutputDiv:empty {
+      display: none;
+  }
+  #visualOutputDiv:empty + .left-section {
+    grid-column: span 2; /* 让它独占整个行 */
+    justify-self: center;
+  }
+  
+  .pdf-btn {
+    font-family: 'Avenir';
+    display: inline-block;
+    width: 150px;      /* 固定宽度 */
+    height: 50px;      /* 固定高度 */
+    line-height: 50px; /* 设置行高，使文字垂直居中 */
+    text-align: center; /* 文字水平居中 */
+    padding: 0;         /* 取消内边距，避免影响布局 */
+    cursor: pointer;
+    text-decoration: none; /* 移除超链接默认下划线 */
+    color: #1C1C1C; /* ✅ 文字颜色 */
+    font-size: 16px;
+
+    margin-right: 50px;
+    margin-bottom: 5px;
+    margin-left: 50px;
+    transition: color 0.3s; /* 只在颜色变化时添加过渡动画 */
+    border: none; /* ✅ 去除边框 */
+    background-color: transparent; /* ✅ 透明背景 */
+    box-shadow: none; /* ✅ 去除阴影 */
+}
+
+/* 鼠标悬停时可以增加颜色变化 */
+.pdf-btn:hover {
+    color: #4D5139; /* ✅ 悬停时颜色变化（可选） */
+    text-decoration: underline; /* ✅ 可选：悬停时添加下划线 */
+}
+
+      /* 针对屏幕宽度较小的设备进行调整 */
+      @media only screen and (max-width: 800px) {
+      body {
+        font-size: 18px; /* 增大整体文字大小 */
+        margin: 0;
+      }
+      .wrapper {
+        min-height: 100vh;
+      }
+      .container {
+        flex-direction: column; /* ✅ 在小屏幕时改成纵向排列 */
+        align-items: center; /* ✅ 让子元素居中 */
+        justify-content: center; /* ✅ 让内容在容器内居中 */
+        text-align: center; /* ✅ 确保文本居中 */
+      }
+      .modal-content {
+        width: calc(100vw - 100px); /* 手机屏幕宽度减去100px */
+        height: 600px;
+      }
+      .btn {
+        margin: 10px 20px;    /* 调整按钮的外边距 */
+      }
+      .custom-file-upload {
+        margin: 10px 20px;    /* 调整按钮的外边距 */
+      }
+      .image-container {
+        justify-content: flex-start; /* 屏幕较窄时，从左侧排列 */
+      }
+      .image-container img {
+        width: calc(100vw - 50px);
+      }
+      #sidebar {
+        height: calc(100vh - 40px);
+        padding-bottom: 100px;  /* 减少内边距 */
+        /* 如果内容太多，也可以添加滚动条 */
+        overflow-y: auto;
+      }
+      /* 调整底部导航的外边距 */
+      .nav-bottom {
+        margin-top: auto;  /* 保持推到底部 */
+        margin-bottom: 200px;  /* 减少底部留白 */
+      }
+      footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: #fff;
+        z-index: 100;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>Music Generation from Image</h1>
-  
-  <form id="uploadForm" method="post" action="/upload" enctype="multipart/form-data">
-    <!-- 表单元素 -->
-    <div>
-      <label for="file">Select an image file:</label>
-      <input type="file" name="file" id="file" required>
+  <div class="wrapper">
+    <!-- 侧边栏 -->
+  <div id="sidebar">
+    <button id="closeSidebar">&times;</button>
+    <div class="nav-top">
+      <ul>
+        <li><a href="#" id="nav-top">TOP</a></li>
+        <li><a href="index.html" id="nav-blossound"><b>Blossound</b></a></li>
+        <li><a href="index_unseen.html" id="nav-unseen"><b>Unseen Rhapsody</b></a></li>
+      </ul>
     </div>
-    <div>
-      <label for="length">Length (measures):</label>
-      <input type="number" name="length" id="length" value="24" min="8">
+    <div class="nav-bottom">
+      <ul>
+        <li class="contact"><a href="#" id="nav-contact">Contact Us</a></li>
+        <li class="contact"><a href="#" id="nav-faq">FAQ</a></li>
+        <li class="contact"><a href="#" id="nav-future">Future Visions</a></li>
+      </ul>
     </div>
-    <div>
-      <label for="method">Method:</label>
-      <select name="method" id="method">
-        <option value="dual">dual</option>
-        <option value="pattern">pattern</option>
+  </div>
+  <button id="openSidebar">&#9776;</button>
+
+
+
+  <div class="content">
+  <h1>Blossound</h1>
+  <p>Hearing the colors unseen</p>
+
+  <div class="container">
+    <div class="left-section">
+    <form id="uploadForm" method="post" action="/upload" enctype="multipart/form-data">
+      <div>
+        <!--
+        <label for="file" style="color: #074D8F;"><b>Select an image</b></label>
+        <input type="file" name="file" id="file" style="font-family: 'Avenir';" required>
+        -->
+        <label for="imageUpload" class="custom-file-upload">
+          <b>SELECT IMAGE</b>
+        </label>
+        <input type="file" id="imageUpload" accept="image/*" / name="file" required>
+
+        <div id="previewArea"></div>
+        
+      </div>
+
+      <div class="form-container">
+      <div>
+        <label for="length">Num of Measures</label>
+        <!--<input type="number" name="length" id="length" value="24" min="8"> -->
+        <select name="length" id="length">
+          <!-- 生成从 8 到 32 的选项 -->
+          <script>
+              const lengthSelect = document.getElementById("length");
+              for (let i = 8; i <= 32; i++) {
+                  let option = document.createElement("option");
+                  option.value = i;
+                  option.textContent = i;
+                  if (i === 24) option.selected = true; // 默认选中 24
+                  lengthSelect.appendChild(option);
+              }
+          </script>
       </select>
+      </div>
+      <div>
+        <label for="method">Method</label>
+        <select name="method" id="method">
+          <option value="dual">dual</option>
+          <option value="pattern">pattern</option>
+        </select>
+      </div>
+      <div>
+        <label for="pattern_name"">Pattern Name</label>
+        <select name="pattern_name" id="pattern_name" disabled>
+          <option value="alberti_4_4">alberti_4_4</option>
+          <option value="boomchick_4_4">boomchick_4_4</option>
+          <option value="waltz_3_4">waltz_3_4</option>
+          <option value="arp_up_4_4">arp_up_4_4</option>
+          <option value="ostinato_16">ostinato_16</option>
+        </select>
+      </div>
+      <div>
+        <label for="left_program_index">Left Instrument</label>
+        <select name="left_program_index" id="left_program_index"></select>
+      </div>
+      <div>
+        <label for="right_program_index">Right Instrument</label>
+        <select name="right_program_index" id="right_program_index"></select>
+      </div>
     </div>
-    <div>
-      <label for="pattern_name">Pattern Name:</label>
-      <select name="pattern_name" id="pattern_name" disabled>
-        <option value="alberti_4_4">None</option>
-        <option value="alberti_4_4">alberti_4_4</option>
-        <option value="boomchick_4_4">boomchick_4_4</option>
-        <option value="waltz_3_4">waltz_3_4</option>
-        <option value="arp_up_4_4">arp_up_4_4</option>
-        <option value="ostinato_16">ostinato_16</option>
-      </select>
-    </div>
-    <div>
-      <label for="left_program_index">Left Instrument:</label>
-      <select name="left_program_index" id="left_program_index"></select>
-    </div>
-    <div>
-      <label for="right_program_index">Right Instrument:</label>
-      <select name="right_program_index" id="right_program_index"></select>
-    </div>
-    <button type="submit">Upload & Generate</button>
-  </form>
+      <button type="submit" class="btn"><b>GENERATE</b></button>
+    </form>
+
   
   <!-- 用于显示生成成功或错误信息 -->
-  <div id="resultArea" style="margin-top:20px; color:blue;"></div>
+  <div id="resultArea" style="margin-top:20px; color:#1C1C1C;"></div>
+</div>  <!--left section-->
 
   <!-- 用于显示可视化输出 -->
-  <div id="visualOutputDiv" style="margin-top:20px;"></div>
+  <div id="visualOutputDiv"></div>
+  <br><br><br>
+</div> <!--container-->
+
+  <footer>
+    © 2025 Blossound. All rights reserved.
+  </footer>
+</div> <!--content-->
+
+<!-- 弹出框 -->
+<div id="modal" class="modal">
+  <div class="modal-content">
+  </div>
+</div>
+
+</div> <!--wrapper-->
   
   <script>
+    /* 导航侧边栏的开关 */
+    const openSidebar = document.getElementById('openSidebar');
+    const closeSidebar = document.getElementById('closeSidebar');
+    const sidebar = document.getElementById('sidebar');
+    
+    openSidebar.addEventListener('click', () => {
+      sidebar.style.left = "0";
+    });
+    
+    closeSidebar.addEventListener('click', () => {
+      sidebar.style.left = "-250px";
+    });
+    
+    /* 弹出框功能 */
+    const modal = document.getElementById('modal');
+    const modalContentContainer = document.querySelector('.modal-content');
+    
+    function openModal() {
+      modal.style.display = "flex";
+    }
+    
+    function closeModal() {
+      modal.style.display = "none";
+    }
+    
+    // 关闭按钮事件（需在每次设置内容后绑定）
+  function bindModalClose() {
+    document.getElementById('modalClose').addEventListener('click', closeModal);
+  }
+  
+  // 当点击 TOP 时，显示三段长文本，文字字号10px，内容可滚动
+  document.getElementById('nav-top').addEventListener('click', (e) => {
+    e.preventDefault();
+    modalContentContainer.innerHTML =
+      '<span class="close" id="modalClose">&times;</span>' +
+      '<div class="scrollContainer">' +
+        '<h2>INTRODUCTION</h2><br>' +
+        '<p>Have you ever stood in a museum or art exhibition, gazing at a masterpiece yet feeling unable to truly enter the artist’s world—perhaps due to a language barrier? Or maybe you’ve wanted to bring your parents or friends along, only to realize some are visually impaired and can only listen to others describe the beauty they cannot see for themselves? Wouldn’t it be wonderful if we could transform images into <strong>sound</strong>, allowing our eyes and ears to discover the wonders of art together?</p><br><br>' +
+        '<p>With these thoughts in mind, I had a bold idea: what if we could interpret images through music, letting the colors and emotions of a painting blossom into a melody in our minds? Could this enable visually impaired individuals to <strong>hear</strong> the essence of a painting, while giving all of us a deeper understanding of the work? Driven by this question, I created a small <strong>image-to-sound</strong> project. Simply upload a photo, and the system automatically generates a unique piano melody and score—bestowing each still image with its own <strong>background song</strong>.</p><br><br>' +
+        '<p>To give you a taste of this cross-boundary exploration:</p><br><br>' +
+        '<p>I.   Photos taken at the same place, but in different seasons or weather, might translate into completely distinct sets of notes—allowing you to <strong>hear</strong> the contrast between the vitality of spring and the melancholy of autumn.</p><br>' +
+        '<p>II.  In a museum, a Monet or Van Gogh painting could be rendered into a melody, so you can <strong>hear</strong> its colors while admiring the brushstrokes.</p><br>' +
+        '<p>III. Traveling with family or friends? Snap a memorable photo, then instantly generate a <strong>spontaneous photo soundtrack</strong>, preserving both the image and its music as a one-of-a-kind memento.</p><br>' +
+        '<p>I hope this <strong>sonic visualization</strong> approach will offer a fresh perspective for more people to appreciate art, especially those who may not be able to see it themselves. And for those with no composition experience, this project might reveal how a single photograph can inspire a marvelous musical connection. Every click of the shutter is like the world searching for its theme song. May you find, in this project, a chance to hear the distinct tune that belongs to both you and the image before you?</p><br><br>' +
+      '</div>';
+    bindModalClose();
+    openModal();
+  });
+  
+  // 当点击 Contact Us 时，弹出框中显示 “e-mail address”
+  document.getElementById('nav-contact').addEventListener('click', (e) => {
+    e.preventDefault();
+    modalContentContainer.innerHTML =
+      '<span class="close" id="modalClose">&times;</span>' +
+      '<div class="scrollContainer">' +
+        '<h2>CONTACT BLOSSOUND</h2>' +
+        '<p><i>Where Colors Find Their Voice</i></p><br><br>' +
+        '<p>We believe every image holds a hidden melody waiting to be heard. Whether you’re an artist exploring sonic landscapes, a museum curator reimagining accessibility, or simply someone who just saw a sunset that deserves its own soundtrack – we want to hear from you.</p><br><br><br><br>' + 
+        '<p><strong>Let’s Create Harmony Together:</strong></p>' +
+        '<p><i>General Inquires</i>: yaoyao.demi0420@gmail.com</p>' +
+        '<p>We read every message and respond within 72 hours.</p><br><br>' +
+        '<p align="center">"<i>The world whispers in colors, <br>and we’re here to amplify their song.</i>"</p><br><br>' +
+      '</div>';
+    bindModalClose();
+    openModal();
+  });
+  
+  // 当点击 FAQ 时，弹出框中显示 “Answers”
+  document.getElementById('nav-faq').addEventListener('click', (e) => {
+    e.preventDefault();
+    modalContentContainer.innerHTML =
+      '<span class="close" id="modalClose">&times;</span>' +
+      '<div class="centerContent">' +
+        '<p>We will collect questions and list the answers here.</p>' +
+      '</div>';
+    bindModalClose();
+    openModal();
+  });
+
+    // 当点击 FAQ 时，弹出框中显示 “Answers”
+    document.getElementById('nav-future').addEventListener('click', (e) => {
+    e.preventDefault();
+    modalContentContainer.innerHTML =
+      '<span class="close" id="modalClose">&times;</span>' +
+      '<div class="scrollContainer">' +
+        '<h2>Towards Unseen Rhapsody</h2>' +
+        '<p><i>Hearing the colors unseen</i></p><br><br>' +
+        '<p>At Blossound, we’re crafting a world where art transcends the boundaries of light. We are currently:</p><br>' + 
+        '<p>I.  Developing haptic-sound interfaces that empower fingertips to see melodies</p><br>' +
+        '<p>II. Co-creating immersive, multi-sensory gallery experiences with blind musicians.</p><br><br>' +
+      '</div>';
+    bindModalClose();
+    openModal();
+  });
+  
+  // 点击弹出框背景关闭弹出框
+  window.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+
     // 监听文件选择的 change 事件
-    document.getElementById("file").addEventListener("change", function() {
+    document.getElementById("imageUpload").addEventListener("change", function() {
       // 清空结果区域
       document.getElementById("resultArea").innerHTML = "";
       // 清空可视化输出区域
@@ -99,8 +668,8 @@
     let midiPlayer = null;  // 当前调度的事件 ID 数组
     let isPlaying = false;   // 当前是否正在播放 MIDI
 
-    // const BACKEND_URL = "http://localhost:8080";
-    const BACKEND_URL = "https://blossound-production.up.railway.app";
+    const BACKEND_URL = "http://localhost:8080";
+    // const BACKEND_URL = "https://blossound-production.up.railway.app";
 
     // 乐器映射表
     const instrumentDict = {
@@ -291,6 +860,29 @@
     document.addEventListener('click', initSampler, { once: true });
 
 
+    /* 自动显示图片预览 */
+    const imageUpload = document.getElementById("imageUpload");
+    const previewArea = document.getElementById("previewArea");
+    
+    imageUpload.addEventListener("change", function() {
+      if (this.files && this.files[0]) {
+        // 清除之前的预览
+        previewArea.innerHTML = "";
+        const message = document.createElement("p");
+        message.textContent = "Image uploaded!";
+        previewArea.appendChild(message);
+        
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(this.files[0]);
+        previewArea.appendChild(img);
+        
+        // 图片加载完毕后释放内存
+        img.onload = () => {
+          URL.revokeObjectURL(img.src);
+        };
+      }
+    });
+
     // 填充乐器下拉菜单
     function populateInstrumentSelect(selectId, defaultName) {
       const selectElem = document.getElementById(selectId);
@@ -401,8 +993,12 @@
     const form = document.getElementById("uploadForm");
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
+
       const formData = new FormData(form);
       const resultArea = document.getElementById("resultArea");
+
+      document.getElementById("resultArea").innerHTML = "";
+      document.getElementById("visualOutputDiv").innerHTML = "";
       resultArea.innerText = "Processing... Please wait...";
 
       try {
@@ -421,12 +1017,13 @@
           mp3Files = result.mp3Files || [];
 
           resultArea.innerHTML = "Generation success!<br>";
+          displayVisualOutput(); 
 
           // 添加一个按钮来显示可视化输出（MID/PNG/PDF）
-          const showBtn = document.createElement("button");
-          showBtn.innerText = "Show Output";
-          showBtn.addEventListener("click", () => displayVisualOutput());
-          resultArea.appendChild(showBtn);
+          // const showBtn = document.createElement("button");
+          // showBtn.innerText = "Show Output";
+          // showBtn.addEventListener("click", () => displayVisualOutput());
+          // resultArea.appendChild(showBtn);
         } else {
           resultArea.innerText = "Error: " + (result.error || "Unknown error");
         }
@@ -442,7 +1039,7 @@
       // 先清空旧内容
       visualOutputDiv.innerHTML = "";
 
- 
+      /*
       // 1) 显示所有 MID 文件及其播放按钮
       if (midFiles.length > 0) {
         const midiContainer = document.createElement("div");
@@ -476,6 +1073,7 @@
         visualOutputDiv.appendChild(midiContainer);
       }
 
+      */
 
       // 1. 添加 MP3 音频播放器
       if(mp3Files.length > 0){
@@ -483,6 +1081,8 @@
         audioElem.controls = true;
         audioElem.src = mp3Files[0];
         audioElem.style.display = "block";
+        audioElem.style.marginTop = "20px";
+        audioElem.style.marginBottom = "20px";
         visualOutputDiv.appendChild(audioElem);
       }
     
@@ -491,12 +1091,34 @@
       if (pngFiles.length > 0) {
         const container = document.createElement("div");
         container.className = "image-container";
-        pngFiles.forEach(src => {
-          const img = document.createElement("img");
-          img.src = src;
-          img.alt = "Score Image";
-          container.appendChild(img);
+        container.style.display = "none"; // 初始隐藏图片
+
+        // 创建 "Show Images" 按钮（初始状态）
+        const toggleImagesBtn = document.createElement("button");
+        toggleImagesBtn.innerText = "Show Music Score";
+        toggleImagesBtn.className = "pdf-btn";
+
+        // 按钮点击事件 -> 切换图片显示/隐藏
+        toggleImagesBtn.addEventListener("click", () => {
+            if (container.style.display === "none") {
+                container.style.display = "flex"; // 显示图片
+                toggleImagesBtn.innerText = "Close"; // 按钮变为 "Close Images"
+            } else {
+                container.style.display = "none"; // 隐藏图片
+                toggleImagesBtn.innerText = "Show Music Score"; // 按钮变为 "Show Images"
+            }
         });
+
+        // 生成 PNG 图片（默认隐藏）
+        pngFiles.forEach(src => {
+            const img = document.createElement("img");
+            img.src = src;
+            img.alt = "Score Image";
+            container.appendChild(img);
+        });
+
+        // 添加按钮和图片容器到 visualOutputDiv
+        visualOutputDiv.appendChild(toggleImagesBtn);
         visualOutputDiv.appendChild(container);
       }
 
@@ -507,8 +1129,9 @@
           pdfLink.href = pdfUrl;
           pdfLink.target = "_blank";
           pdfLink.innerText = `Open PDF`;
+          pdfLink.classList.add("pdf-btn");
           pdfLink.style.display = "block";
-          pdfLink.style.marginTop = "10px";
+          pdfLink.style.marginBottom = "50px";
           visualOutputDiv.appendChild(pdfLink);
         });
       }

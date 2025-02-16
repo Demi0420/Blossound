@@ -26,6 +26,8 @@ import torchvision.models as models
 from torchvision.models import MobileNet_V2_Weights
 import subprocess
 import pretty_midi
+import hashlib
+
 
 
 
@@ -151,7 +153,10 @@ def set_deterministic_seed(deep_vec):
     """
     利用 deep_vec 的字节哈希值设置 random.seed，确保同一图像产生相同的随机序列
     """
-    s = hash(deep_vec.tobytes()) & 0xffffffff
+    # 使用 hashlib.md5 得到一个确定性的 128 位哈希值
+    h = hashlib.md5(deep_vec.tobytes()).hexdigest()
+    # 取前 8 位转为 int（32 位种子）
+    s = int(h[:8], 16)
     random.seed(s)
     np.random.seed(s)
 
@@ -271,7 +276,7 @@ def generate_dual_voice_measure(chord_pcs, beats=4, last_interval=None, hist_not
         candidate_midi = None
         while trials < 30:
             pc = random.choice(chord_pcs)
-            octv = 4 if random.random() < 0.7 else 5
+            octv = 4 if random.random() < 0.85 else 5
             mel_midi = 12 * (octv + 1) + pc
             new_interval = (bass_midi, mel_midi)
             # 这里调用 is_parallel_perfect 与 check_big_leap_direction（需保证这两个函数已实现）
@@ -279,11 +284,31 @@ def generate_dual_voice_measure(chord_pcs, beats=4, last_interval=None, hist_not
             if current_interval is not None and abs(new_interval[1]-new_interval[0]) in (7,12):
                 trials += 1
                 continue
-            # 这里可加入大跳后向级规则检查（省略细节）
+
+            # 检查与前一个右声部音符的跳跃幅度，若已有前音，则要求不超过max_jump
+            if current_last_r is not None and abs(mel_midi - current_last_r) > max_jump:
+                trials += 1
+                continue
+
             candidate_midi = mel_midi
             break
+
         if candidate_midi is None:
-            candidate_midi = bass_midi + 12
+            if current_last_r is not None:
+                # 搜索当前和弦在较低和较高八度中与前一个音接近的候选音
+                possible_candidates = []
+                for pc in chord_pcs:
+                    for octv in [4, 5]:
+                        candidate = 12 * (octv + 1) + pc
+                        if abs(candidate - current_last_r) <= max_jump:
+                            possible_candidates.append(candidate)
+                if possible_candidates:
+                    # 选择与前一个音距离最小的候选
+                    candidate_midi = min(possible_candidates, key=lambda x: abs(x - current_last_r))
+                else:
+                    candidate_midi = bass_midi + 12  # 最后备用
+            else:
+                candidate_midi = bass_midi + 12
 
         right_list.append(candidate_midi)
         left_list.append(bass_midi)
@@ -346,45 +371,92 @@ ACCOMPANIMENT_PATTERNS = {
     # ... 可添加更多 pattern ...
 }
 
-def pick_note_from_chord(chord_pcs_sorted, note_position="lowest", lowestBass=36, highestBass=60, velocity=80, cyc_idx_dict=None):
+
+
+def pick_note_from_chord(chord_pcs_sorted, note_position="lowest", lowestBass=36, highestBass=60, 
+                         velocity=80, prev_note=None, max_jump=7, cyc_idx_dict=None):
     """
-    根据 note_position 从 chord_pcs_sorted 中选择音符，并保证音高在 [lowestBass, highestBass] 范围内。
+    根据 note_position 从 chord_pcs_sorted 中选择一个音符，并保证生成的音符固定在一个八度内，
+    同时检查与前一个左声部音符的跳跃幅度不超过 max_jump，避免出现突然的高八度。
     note_position 可为 "lowest", "highest", "middle", "random", "next", "chord" 等。
     返回 (pitch_list, velocity_list)。
+    
+    参数说明：
+      - chord_pcs_sorted: 和弦音的音高（以音高类，即 0~11 表示音名）列表，已排序。
+      - lowestBass, highestBass: 指定允许的音高范围，但这里我们将音符固定在一个八度内，
+            所以我们会选用一个合适的八度（例如固定为 octv = 3）。
+      - prev_note: 前一个左声部音符，用于平滑跳跃。
+      - max_jump: 允许的最大跳跃音程（半音数）。
+      - cyc_idx_dict: 用于 "next" 模式循环索引。
     """
-    def clip_to_range(pitch, low, high):
-        p = pitch
-        while p < low:
-            p += 12
-        while p > high:
-            p -= 12
-        return p
+    # 固定使用的八度：例如设为 3，即构造音符时用 12*(3+1)=48 作为基础，这样生成的音在 [48, 59] 内
+    fixed_octv = 3
 
-    if not chord_pcs_sorted:
-        return ([60], [velocity])
+    def build_candidate(pc):
+        octave = (prev_note // 12) if prev_note else fixed_octv + 1  # 计算出一个合理的八度
+        return (octave * 12) + (pc % 12)
+
+    def get_base_pitch():
+        # 按照 note_position 选择一个和弦内的音（仅返回音名 0~11）
+        if not chord_pcs_sorted:
+            return 0
+        # if note_position == "chord":
+             # 如果是 "chord"，返回整个列表（注意：这种情况在左声部中一般不用）
+        #     return chord_pcs_sorted[:]  
+        if note_position == "lowest":
+            return chord_pcs_sorted[0]
+        elif note_position == "highest":
+            return chord_pcs_sorted[-1]
+        elif note_position == "middle":
+            mid = len(chord_pcs_sorted) // 2
+            return chord_pcs_sorted[mid]
+        elif note_position == "random":
+            return random.choice(chord_pcs_sorted)
+        elif note_position == "next":
+            if cyc_idx_dict is None:
+                cyc_idx_dict = {"arp_index": 0}
+            idx = cyc_idx_dict["arp_index"]
+            pitch = chord_pcs_sorted[idx % len(chord_pcs_sorted)]
+            cyc_idx_dict["arp_index"] = idx + 1
+            return pitch
+        else:
+            return chord_pcs_sorted[0]
     
-    if note_position == "chord":
-        final = [clip_to_range(p, lowestBass, highestBass) for p in chord_pcs_sorted]
-        return (final, [velocity] * len(final))
-    elif note_position == "lowest":
-        base = chord_pcs_sorted[0]
-    elif note_position == "highest":
-        base = chord_pcs_sorted[-1]
-    elif note_position == "middle":
-        mid = len(chord_pcs_sorted) // 2
-        base = chord_pcs_sorted[mid]
-    elif note_position == "random":
-        base = random.choice(chord_pcs_sorted)
-    elif note_position == "next":
-        if cyc_idx_dict is None:
-            cyc_idx_dict = {"arp_index": 0}
-        idx = cyc_idx_dict["arp_index"]
-        base = chord_pcs_sorted[idx % len(chord_pcs_sorted)]
-        cyc_idx_dict["arp_index"] = idx + 1
-    else:
-        base = chord_pcs_sorted[0]
+    candidate = None
+    trials = 0
+    while trials < 30:
+        base_pitch = get_base_pitch()
+        cand = build_candidate(base_pitch)
+        # 检查是否在允许范围内（虽然固定八度一般都在范围内）
+        if cand < lowestBass or cand > highestBass:
+            trials += 1
+            continue
+
+        # 检查与前一个音符的跳跃幅度，若已有前音则要求不超过 max_jump
+        if prev_note is not None:
+            if abs(cand - prev_note) > max_jump or (cand // 12 != prev_note // 12):
+                trials += 1
+                continue
+
+        # 可在这里加入其它规则检查，例如避免与右声部产生平行完美（需传入对应右声部信息）
+        candidate = cand
+        break
+
+    # 如果多次尝试后没有找到合适的候选，则采用回退策略：
+    if candidate is None:
+        # 在固定八度内，对所有和弦音计算候选值
+        possible = [build_candidate(pc) for pc in chord_pcs_sorted if lowestBass <= build_candidate(pc) <= highestBass]
+        if prev_note is not None and possible:
+            # 选择与 prev_note 差距最小的候选
+            # candidate = min(possible, key=lambda x: abs(x - prev_note))
+            candidate = min(possible, key=lambda x: (abs(x - prev_note), abs((x // 12) - (prev_note // 12))))
+        elif possible:
+            candidate = possible[0]
+        else:
+            # 如果所有候选都不合适，则直接返回固定八度内最低的音
+            candidate = build_candidate(chord_pcs_sorted[0])
     
-    return ([clip_to_range(base, lowestBass, highestBass)], [velocity])
+    return ([candidate], [velocity])
 
 def generate_accompaniment(
     chord_pcs_sorted, 
@@ -435,6 +507,8 @@ def generate_accompaniment(
             lowestBass=lowestBass,
             highestBass=highestBass,
             velocity=velocityBase,
+            prev_note=None, 
+            max_jump=7,
             cyc_idx_dict=cyc_idx_dict
         )
         note_events.append((event_on, event_off, pitches, velocities))
@@ -623,6 +697,93 @@ def convert_to_type0(pretty_midi_obj, output_filename, left_program_index, right
         print(f"Track {i}: {instrument.name}, Program: {instrument.program}")
 
 
+def pick_left_voice_note(chord_pcs_sorted, note_position="lowest", 
+                         fixed_octv=3,
+                         lowestBass=36, highestBass=60, 
+                         velocity=80, prev_note=None, max_jump=7, cyc_idx_dict=None,
+                         prev_right=None, current_right=None):
+    """
+    从 chord_pcs_sorted 中选择一个左声部音符，使其固定在指定八度内，
+    并检查与前一个左声部音符的跳跃不超过 max_jump，且避免与右声部产生平行完美。
+    
+    chord_pcs_sorted 中的数字视为音名（0～11），候选音通过固定八度构造为：base_octave_base + (pc % 12)
+    
+    新增参数：
+      - prev_right: 前一拍右声部音符（若有）
+      - current_right: 当前拍右声部音符
+    返回 (pitch_list, velocity_list)。
+    """
+    # 固定八度内的基础音，例如 fixed_octv=3 对应 12*(3+1)=48
+    base_octave_base = 12 * (fixed_octv + 1)  # 例如 48
+
+    def build_candidate(pc):
+        # 强制将 pc 限定在 0～11 内，再加上固定八度基准
+        return base_octave_base + pc
+
+    def get_base_pitch():
+        if not chord_pcs_sorted:
+            return 0
+        if note_position == "lowest":
+            return chord_pcs_sorted[0]
+        elif note_position == "highest":
+            return chord_pcs_sorted[-1]
+        elif note_position == "middle":
+            mid = len(chord_pcs_sorted) // 2
+            return chord_pcs_sorted[mid]
+        elif note_position == "random":
+            return random.choice(chord_pcs_sorted)
+        elif note_position == "next":
+            if cyc_idx_dict is None:
+                cyc_idx_dict = {"arp_index": 0}
+            idx = cyc_idx_dict["arp_index"]
+            pitch = chord_pcs_sorted[idx % len(chord_pcs_sorted)]
+            cyc_idx_dict["arp_index"] = idx + 1
+            return pitch
+        else:
+            return chord_pcs_sorted[0]
+    
+    candidate = None
+    trials = 0
+    while trials < 30:
+        base_pitch = get_base_pitch()
+        cand = build_candidate(base_pitch)
+        
+        # 检查是否在允许范围内
+        if cand < lowestBass or cand > highestBass:
+            trials += 1
+            continue
+
+        # 检查与前一个左声部音符的跳跃幅度，若有前音则要求不超过 max_jump
+        if prev_note is not None and abs(cand - prev_note) > max_jump:
+            trials += 1
+            continue
+
+        # 新增：避免与右声部产生平行完美
+        # 如果存在上一拍和当前拍右声部音符，则判断
+        if prev_note is not None and prev_right is not None and current_right is not None:
+            interval_prev = abs(prev_right - prev_note)
+            interval_candidate = abs(current_right - cand)
+            if interval_prev in (7, 12) and interval_candidate in (7, 12):
+                # 产生平行完美，放弃此候选
+                trials += 1
+                continue
+
+        candidate = cand
+        break
+    # 如果 30 次尝试后仍未找到合适候选，则采用回退策略
+    if candidate is None:
+        possible = [build_candidate(pc) for pc in chord_pcs_sorted]
+        # 过滤出在允许范围内的
+        possible = [p for p in possible if lowestBass <= p <= highestBass]
+        if prev_note is not None and possible:
+            candidate = min(possible, key=lambda x: abs(x - prev_note))
+        elif possible:
+            candidate = possible[0]
+        else:
+            candidate = build_candidate(chord_pcs_sorted[0])
+    
+    return ([candidate], [velocity])
+
 #########################################################
 # G. 主入口: 生成 MIDI, LY, PDF
 #########################################################
@@ -673,6 +834,7 @@ def generate_music(
     model = load_mobilenet_v2()
     # model = load_resnet18_model()
     deep_vec = extract_deep_features_bgr(img_bgr, model)
+    print(deep_vec)
     
     # 固定随机种子，确保相同图像生成相同随机序列
     set_deterministic_seed(deep_vec)
@@ -696,6 +858,7 @@ def generate_music(
     # e) 根据 method 选择生成方式
     right_all = []
     left_all  = []
+    
     if method == "dual":
         last_interval = None
         hist_notes = (None, None)
@@ -712,6 +875,7 @@ def generate_music(
     else:
         # method == "pattern"
         # 右声部仍采用对位模式
+        
         last_interval_r = None
         hist_notes_r = (None, None)
         spb = 60.0 / deep_tempo
@@ -730,6 +894,7 @@ def generate_music(
             last_interval_r = new_int_r
             hist_notes_r = new_hist_r
 
+            
             # 左声部使用伴奏模式生成
             events = generate_accompaniment(
                 chord_pcs_sorted=chord_pcs,
@@ -755,7 +920,41 @@ def generate_music(
                 if pitches:
                     measure_pitch_list[beat_idx] = pitches[0]
             left_all.append(measure_pitch_list)
+        
+        """
+        # 遍历每个小节的 right_all（例如，每个元素都是一个有 4 个拍音高的列表）
+        
     
+        for measure_right in right_all:
+            prev_left = None   # 用于记录前一拍左声部音符，用于平滑过渡
+            measure_left = []   # 存放当前小节每拍的左声部音符
+            # 对当前小节的每一拍循环
+            for beat_idx, current_right in enumerate(measure_right):
+                # 如果当前拍不是第一拍，则上一拍右声部音符取当前小节中上一拍，否则为空
+                prev_right = measure_right[beat_idx-1] if beat_idx > 0 else None
+                    
+                # 调用 pick_left_voice_note 生成当前拍的左声部音符
+                left_voice = pick_left_voice_note(
+                    chord_pcs_sorted=chord_pcs,         # 和弦音列表（例如：[0, 4, 7]）
+                    note_position="lowest",
+                    fixed_octv=3,                       # 固定八度，例如固定在 48～59 之间
+                    lowestBass=36,
+                    highestBass=60,
+                    velocity=80,
+                    prev_note=prev_left,                # 上一拍左声部音符（如果有）
+                    max_jump=7,
+                    prev_right=prev_right,              # 上一拍右声部音符（如果有）
+                    current_right=current_right         # 当前拍右声部音符
+                )
+                # left_voice 返回 ([pitch], [velocity])，取第一个音高作为当前拍的左声部
+                pitch = left_voice[0][0]
+                measure_left.append(pitch)
+                # 更新 prev_left 为当前拍的左声部音符，供下一拍使用
+                prev_left = pitch
+
+            left_all.append(measure_left)
+            """
+
     # f) 写 MIDI 文件
     pm = pretty_midi.PrettyMIDI()
 
@@ -788,32 +987,65 @@ def generate_music(
     merged_left = merge_measures(left_all)
     right_lily = measures_to_lily_merged(merged_right)
     left_lily = measures_to_lily_merged(merged_left)
+    
+
+    def add_dyn(lily):
+        # 先按照小节分割，假设每个小节以 "|" 结尾
+        measures = [m.strip() for m in lily.split("|") if m.strip()]
+        total_measures = len(measures)
+
+        # 定义分段：前 25% 的小节为 seg1，后 25% 为 seg3，中间为 seg2
+        seg1_measures = measures[: max(1, total_measures // 4)]
+        seg3_measures = measures[-max(1, total_measures // 4):]
+        seg2_measures = measures[max(1, total_measures // 4): total_measures - max(1, total_measures // 4)]
+
+        # 重新拼接为字符串，每个小节后加上竖线
+        seg1 = " | ".join(seg1_measures) + " |"
+        seg2 = " | ".join(seg2_measures) + " |"
+        seg3 = " | ".join(seg3_measures) + " |"
+
+
+        segment1_with_dyn = f"{{ \\p {seg1} r4 \\< }}"
+        segment2_with_dyn = f"{{ \\! \\f {seg2} r4 }}"
+        segment3_with_dyn = f"{{ \\> {seg3} r4 \\! \\mp }}"
+
+        # 最终的右手音符串
+        final_lily = segment1_with_dyn + segment2_with_dyn + segment3_with_dyn
+        return final_lily
+    
+    final_right_lily = add_dyn(right_lily)
+    final_left_lily = add_dyn(left_lily)
+
+    print(len(final_right_lily), len(final_left_lily))
+
+
     lily_root = convert_key_for_lily(deep_root)
+
     lily_content = f"""\\version "2.24.1"
-        \\header {{
+    \\header {{
         title = "{img_name}"
         % composer = "Yao."
-        }}
-        \\score {{
+    }}
+    \\score {{
         \\new PianoStaff <<
             \\new Staff = "right" {{
-            \\clef treble
-            \\key {lily_root} \\{deep_scale}
-            \\tempo 4={deep_tempo}
-            {right_lily}
-            \\bar "|."
+                \\clef treble
+                \\key {lily_root} \\{deep_scale}
+                \\tempo 4={deep_tempo}
+                {right_lily}
+                \\bar "|."
             }}
             \\new Staff = "left" {{
-            \\clef bass
-            \\key {lily_root} \\{deep_scale}
-            {left_lily}
-            \\bar "|."
+                \\clef bass
+                \\key {lily_root} \\{deep_scale}
+                {left_lily}
+                \\bar "|."
             }}
         >>
         \\layout {{}}
         \\midi {{}}
-        }}
-        """
+    }}
+    """
     with open(out_ly, "w", encoding="utf-8") as f:
         f.write(lily_content)
     print("[INFO] LilyPond 写入:", out_ly)
