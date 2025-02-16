@@ -407,6 +407,9 @@
         max-width: 800px;
         margin: 0 auto;
       }
+      .form-container {
+        width: 90%; /* 适当设置宽度 */
+      }
       .modal-content {
         width: calc(100vw - 100px); /* 手机屏幕宽度减去100px */
         height: 600px;
@@ -679,8 +682,8 @@
     let midiPlayer = null;  // 当前调度的事件 ID 数组
     let isPlaying = false;   // 当前是否正在播放 MIDI
 
-    // const BACKEND_URL = "http://localhost:8080";
-    const BACKEND_URL = "https://blossound-production.up.railway.app";
+    const BACKEND_URL = "http://localhost:8080";
+    // const BACKEND_URL = "https://blossound-production.up.railway.app";
 
     // 乐器映射表
     const instrumentDict = {

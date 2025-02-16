@@ -415,6 +415,8 @@ def pick_note_from_chord(chord_pcs_sorted, note_position="lowest", lowestBass=36
         elif note_position == "next":
             if cyc_idx_dict is None:
                 cyc_idx_dict = {"arp_index": 0}
+            if "arp_index" not in cyc_idx_dict:  
+                cyc_idx_dict["arp_index"] = 0
             idx = cyc_idx_dict["arp_index"]
             pitch = chord_pcs_sorted[idx % len(chord_pcs_sorted)]
             cyc_idx_dict["arp_index"] = idx + 1
@@ -553,9 +555,33 @@ def merge_measure(measure):
 def merge_measures(measures):
     return [merge_measure(m) for m in measures]
 
-def duration_token(count):
-    mapping = {1: "4", 2: "2", 3: "2.", 4: "1"}
-    return mapping.get(count, "4")
+
+def get_lilypond_duration(duration_factor):
+    """
+    将 duration_factor (如 1.5x, 1.0x, 0.75x) 转换为 LilyPond 的音符时值 (如 4, 8, 16)
+    """
+    if duration_factor >= 1.4:
+        return "2"  # 二分音符
+    elif duration_factor >= 1.0:
+        return "4"  # 四分音符
+    elif duration_factor >= 0.75:
+        return "8"  # 八分音符
+    else:
+        return "16"  # 十六分音符
+       
+
+def duration_token(count, note_index, duration_curve=None):
+    """
+    根据音符重复次数 count 和 duration_factor 生成 LilyPond 时值
+    """
+    if duration_curve is not None:
+        duration_factor = duration_curve[note_index]  # 🎯 从 `duration_curve` 获取 MIDI 时长信息
+        lily_duration = get_lilypond_duration(duration_factor)  # 🎯 转换为 LilyPond 格式
+        return lily_duration
+    else:
+        mapping = {1: "4", 2: "2", 3: "2.", 4: "1"}
+        return mapping.get(count, "4")
+    
 
 def midi_to_lily_pitch(midi_val):
     pitch_class = midi_val % 12
@@ -569,13 +595,19 @@ def midi_to_lily_pitch(midi_val):
         base += "," * (-shift)
     return base
 
-def measures_to_lily_merged(merged_measures):
+def measures_to_lily_merged(merged_measures, duration_curve=None):
     lines = []
+    note_index = 0
+
     for measure in merged_measures:
         tokens = []
         for (midiv, count) in measure:
-            note_str = midi_to_lily_pitch(midiv) + duration_token(count)
+            note_str = midi_to_lily_pitch(midiv) + duration_token(count, note_index, duration_curve=duration_curve)
             tokens.append(note_str)
+
+            # print(f"[LilyPond] Note: {note_str}, Index: {note_index}, MIDI Pitch: {midiv}")
+            note_index += count
+            
         line = " ".join(tokens) + " |"
         lines.append(line)
     return "\n".join(lines)
@@ -735,6 +767,8 @@ def pick_left_voice_note(chord_pcs_sorted, note_position="lowest",
         elif note_position == "next":
             if cyc_idx_dict is None:
                 cyc_idx_dict = {"arp_index": 0}
+            if "arp_index" not in cyc_idx_dict:  
+                cyc_idx_dict["arp_index"] = 0
             idx = cyc_idx_dict["arp_index"]
             pitch = chord_pcs_sorted[idx % len(chord_pcs_sorted)]
             cyc_idx_dict["arp_index"] = idx + 1
@@ -834,7 +868,7 @@ def generate_music(
     model = load_mobilenet_v2()
     # model = load_resnet18_model()
     deep_vec = extract_deep_features_bgr(img_bgr, model)
-    print(deep_vec)
+    # print(deep_vec)
     
     # 固定随机种子，确保相同图像生成相同随机序列
     set_deterministic_seed(deep_vec)
@@ -848,6 +882,7 @@ def generate_music(
     final_root = color_root2 if random.random() < 0.5 else color_root
     if random.random() < 0.5:
         deep_root = final_root
+    print(deep_root, color_root, color_root2)
     
     # d) 构建 Markov 状态与和弦序列
     states = build_markov_states(deep_scale)
@@ -960,21 +995,118 @@ def generate_music(
 
     right_instr = pretty_midi.Instrument(program=right_program_index, name="RightHand")
     left_instr  = pretty_midi.Instrument(program=left_program_index, name="LeftHand")
+    
+    MIN_VELOCITY = 40  # 最低音量（对应 `\p`）
+    MAX_VELOCITY = 100  # 最高音量（对应 `\f`）
+
+    MIN_DURATION_FACTOR = 1.5  # 开始和结束的 duration 倍数
+    NORMAL_DURATION_FACTOR = 1.0  # 中间部分的 duration
+    MAX_DURATION_FACTOR = 1.5  # 结尾部分的 duration 倍数
+
+
+    # 计算总音符数
+    total_notes = len(right_all) * 4
+
+    # 生成音量变化曲线 (渐强 + 维持 + 渐弱)
+    velocity_curve = []
+    duration_curve = []
+    for i in range(total_notes):
+        if i < total_notes * 0.25:  # 🎼 前 25% 渐强
+            velocity = MIN_VELOCITY + (MAX_VELOCITY - MIN_VELOCITY) * (i / (total_notes * 0.25))
+            duration_factor = MIN_DURATION_FACTOR - (MIN_DURATION_FACTOR - NORMAL_DURATION_FACTOR) * (i / (total_notes * 0.25))
+        elif i < total_notes * 0.75:  # 🎼 中间 50% 维持
+            velocity = MAX_VELOCITY
+            duration_factor = NORMAL_DURATION_FACTOR
+        else:  # 🎼 后 25% 渐弱
+            velocity = MAX_VELOCITY - (MAX_VELOCITY - MIN_VELOCITY) * ((i - total_notes * 0.75) / (total_notes * 0.25))
+            duration_factor = NORMAL_DURATION_FACTOR + (MAX_DURATION_FACTOR - NORMAL_DURATION_FACTOR) * ((i - total_notes * 0.75) / (total_notes * 0.25))
+        
+        velocity_curve.append(int(velocity))  # 取整
+        duration_curve.append(duration_factor)
+
     sec_per_beat = 60.0 / deep_tempo
     current_time = 0.0
-    for measure_i in range(len(right_all)):
-        for b in range(4):  # 每小节 4 拍
+ 
+
+    # 🎵 逐个音符设置 `velocity`
+    note_index = 0
+    
+    sec_per_beat = 60.0 / deep_tempo
+    current_time = 0.0
+
+    # 归一化 deep_vec，使其映射到 0.5x ~ 2x 之间（更合理的范围）
+    normalized_deep_vec = (deep_vec - np.min(deep_vec)) / (np.max(deep_vec) - np.min(deep_vec))  # 归一化到 0~1
+    tempo_modifiers = 0.5 + normalized_deep_vec * 1.5  # 变换范围 0.5x ~ 2x
+
+    # 使用滑动窗口方式（rolling window）让 1280 维特征影响所有音符
+    num_notes = len(right_all) * 4  # 计算总音符数
+    rolling_window_size = max(1, len(tempo_modifiers) // num_notes)  # 计算每个音符对应的窗口大小
+
+    # 计算节奏权重，使其平滑过渡
+    tempo_modifiers_resampled = np.convolve(tempo_modifiers, np.ones(rolling_window_size) / rolling_window_size, mode='same')
+
+    merged_right = merge_measures(right_all)
+    merged_left = merge_measures(left_all)
+
+    note_index = 0
+    current_time = 0.0
+
+    for measure_i in range(len(merged_right)):  # ✅ 使用 merged_right 代替 right_all
+        for (r_midi, count) in merged_right[measure_i]:  # ✅ 获取合并后的音符
             start_t = current_time
-            end_t = current_time + sec_per_beat
-            r_midi = right_all[measure_i][b]
-            l_midi = left_all[measure_i][b]
-            nr = pretty_midi.Note(velocity=100, pitch=r_midi, start=start_t, end=end_t)
-            nl = pretty_midi.Note(velocity=80, pitch=l_midi, start=start_t, end=end_t)
+            base_duration = sec_per_beat  # 基础时长
+
+            # 🎼 取当前音符的动态音量和时长
+            velocity = velocity_curve[note_index]
+            duration_factor = duration_curve[note_index]
+            note_index += count  # ✅ 按照合并后的音符数更新索引
+
+            # 🎵 计算音符结束时间（合并音符时考虑 count）
+            end_t = current_time + base_duration * duration_factor * count
+
+            # 🎹 生成 MIDI 音符
+            nr = pretty_midi.Note(velocity=velocity, pitch=r_midi, start=start_t, end=end_t)
+
+            # ✅ 打印 MIDI 右手音符信息
+            # print(f"[MIDI] Right Hand: Pitch={nr.pitch} ({pretty_midi.note_number_to_name(nr.pitch)}), "
+            #     f"Velocity={nr.velocity}, Duration={nr.end - nr.start:.3f}")
+
             right_instr.notes.append(nr)
+
+            current_time = end_t  # ✅ 更新时间
+
+    # 🎼 处理左手声部
+    current_time = 0.0
+    note_index = 0
+
+    for measure_i in range(len(merged_left)):  # ✅ 使用 merged_left 代替 left_all
+        for (l_midi, count) in merged_left[measure_i]:  # ✅ 获取合并后的音符
+            start_t = current_time
+            base_duration = sec_per_beat  # 基础时长
+
+            # 🎼 取当前音符的动态音量和时长
+            velocity = velocity_curve[note_index]
+            duration_factor = duration_curve[note_index]
+            note_index += count  # ✅ 按照合并后的音符数更新索引
+
+            # 🎵 计算音符结束时间
+            end_t = current_time + base_duration * duration_factor * count
+
+            # 🎹 生成 MIDI 音符
+            nl = pretty_midi.Note(velocity=velocity, pitch=l_midi, start=start_t, end=end_t)
+
+            # ✅ 打印 MIDI 左手音符信息
+            # print(f"[MIDI] Left Hand: Pitch={nl.pitch} ({pretty_midi.note_number_to_name(nl.pitch)}), "
+            #     f"Velocity={nl.velocity}, Duration={nl.end - nl.start:.3f}")
+
             left_instr.notes.append(nl)
-            current_time = end_t
+
+            current_time = end_t  # ✅ 更新时间
+
+
     right_instr.notes = merge_consecutive_notes(right_instr.notes)
     left_instr.notes = merge_consecutive_notes(left_instr.notes)
+
     pm.instruments.append(right_instr)
     pm.instruments.append(left_instr)
     pm.write(out_midi)
@@ -983,40 +1115,63 @@ def generate_music(
     convert_to_type0(pm, out_midi, left_program_index, right_program_index)
 
     # g) 生成 LilyPond 文本并转换为 PDF
-    merged_right = merge_measures(right_all)
-    merged_left = merge_measures(left_all)
-    right_lily = measures_to_lily_merged(merged_right)
-    left_lily = measures_to_lily_merged(merged_left)
+    right_lily = measures_to_lily_merged(merged_right, duration_curve=None)
+    left_lily = measures_to_lily_merged(merged_left, duration_curve=None)
     
 
+    def attach_absolute_dynamic(measure_list, dynamic):
+        """
+        确保 `\p`, `\mp`, `\!` 这样的位置标记紧跟音符，而不是单独存在
+        """
+        for i, measure in enumerate(measure_list):
+            tokens = measure.split()
+            for j, token in enumerate(tokens):
+                if token[-1].isdigit():  # 找到音符（如 d''4）
+                    tokens[j] = f"{token}{dynamic}"  # 让动态标记紧贴音符
+                    measure_list[i] = " ".join(tokens)
+                    return measure_list
+        return measure_list  # 没有音符，不修改
+
     def add_dyn(lily):
-        # 先按照小节分割，假设每个小节以 "|" 结尾
+        # 1️⃣ **按小节拆分**
         measures = [m.strip() for m in lily.split("|") if m.strip()]
         total_measures = len(measures)
 
-        # 定义分段：前 25% 的小节为 seg1，后 25% 为 seg3，中间为 seg2
-        seg1_measures = measures[: max(1, total_measures // 4)]
-        seg3_measures = measures[-max(1, total_measures // 4):]
-        seg2_measures = measures[max(1, total_measures // 4): total_measures - max(1, total_measures // 4)]
+        if total_measures < 4:
+            return lily  # 小节太少，不做动态处理
 
-        # 重新拼接为字符串，每个小节后加上竖线
-        seg1 = " | ".join(seg1_measures) + " |"
-        seg2 = " | ".join(seg2_measures) + " |"
-        seg3 = " | ".join(seg3_measures) + " |"
+        # 2️⃣ **计算分段索引**
+        seg1_count = max(1, total_measures // 4)  # 前 25%
+        seg3_count = max(1, total_measures // 4)  # 后 25%
+        seg2_count = total_measures - (seg1_count + seg3_count)  # 中间 50%
+
+        # 3️⃣ **划分小节**
+        seg1_measures = measures[:seg1_count]      # 前 25%
+        seg2_measures = measures[seg1_count: seg1_count + seg2_count]  # 中间 50%
+        seg3_measures = measures[-seg3_count:]     # 后 25%
 
 
-        segment1_with_dyn = f"{{ \\p {seg1} r4 \\< }}"
-        segment2_with_dyn = f"{{ \\! \\f {seg2} r4 }}"
-        segment3_with_dyn = f"{{ \\> {seg3} r4 \\! \\mp }}"
+        # 4️⃣ **修正 `\p` `\mp` 绑定音符**
+        if seg1_measures:
+            seg1_measures = attach_absolute_dynamic(seg1_measures, "\\p")  # `\p` 绑定音符
+            seg1_measures = attach_absolute_dynamic(seg1_measures, "\\<")  # `\<` 绑定音符
 
-        # 最终的右手音符串
-        final_lily = segment1_with_dyn + segment2_with_dyn + segment3_with_dyn
+        if seg2_measures:
+            seg2_measures = attach_absolute_dynamic(seg2_measures, "\\!")  # `\!` 绑定音符
+
+        if seg3_measures:
+            seg3_measures = attach_absolute_dynamic(seg3_measures, "\>")  # `\>` 绑定音符
+            seg3_measures = attach_absolute_dynamic(seg3_measures, " \! \\mp")  # `\mp` 绑定音符
+
+        # 5️⃣ **重新拼接小节**
+        final_lily = " | ".join(seg1_measures + seg2_measures + seg3_measures) + " |"
+
         return final_lily
     
     final_right_lily = add_dyn(right_lily)
     final_left_lily = add_dyn(left_lily)
 
-    print(len(final_right_lily), len(final_left_lily))
+    # print(len(final_right_lily), len(final_left_lily))
 
 
     lily_root = convert_key_for_lily(deep_root)
@@ -1031,14 +1186,14 @@ def generate_music(
             \\new Staff = "right" {{
                 \\clef treble
                 \\key {lily_root} \\{deep_scale}
-                \\tempo 4={deep_tempo}
-                {right_lily}
+                % \\tempo 4={deep_tempo}
+                {final_right_lily}
                 \\bar "|."
             }}
             \\new Staff = "left" {{
                 \\clef bass
                 \\key {lily_root} \\{deep_scale}
-                {left_lily}
+                {final_left_lily}
                 \\bar "|."
             }}
         >>
