@@ -7,6 +7,15 @@
   <!-- Tone.js & MIDI解析库 -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.39/Tone.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tonejs/midi@2.0.27/build/Midi.min.js"></script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-77F7VG5Z8C"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-77F7VG5Z8C');
+  </script>
   <style>
     body {
         font-family: 'Avenir';
@@ -1258,6 +1267,7 @@ document.getElementById("method").addEventListener("change", function() {
 
       // 检查是否已选择图片
       if (!imageInput.files || imageInput.files.length === 0) {
+        resultArea.innerHTML = "";
         previewArea.innerHTML = "<b>Please upload image first.</b>"; // 在 resultArea 显示错误信息
         
         // ✅ 滚动到 "SELECT IMAGE" 按钮，让其成为页面焦点
@@ -1266,6 +1276,7 @@ document.getElementById("method").addEventListener("change", function() {
         return;  // 阻止表单提交
       }
 
+      resultArea.innerHTML = "";
       resultArea.innerHTML = "<b>Processing... Please wait...</b>";
       resultArea.style.color = "black"; // 处理中的信息用黑色
       resultArea.style.display = "block"; 
