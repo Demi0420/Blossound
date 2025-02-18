@@ -128,20 +128,19 @@
       cursor: pointer;
     }
     .container {
-      display: flex;
-      justify-content: space-between; /* 确保左侧和右侧有间距 */
-      align-items: flex-start; /* 让两个部分的顶部对齐 */
-      flex-wrap: wrap; /* ❌ 避免 flex 自动换行 */
-      gap: 0; /* 左右两部分的间距 */
-      width: 100%; /* 确保足够的可用空间 */
+    display: flex;
+    flex-direction: column; /* 让子元素垂直排列 */
+    align-items: center; /* 居中对齐 */
+    width: 100%; /* 确保占满父级 */
+    gap: 10px; /* 可选：增加间距 */
     }
-    /* 左侧内容（表单 + 结果） */
+    /* 左侧内容（表单 + 结果） 
     .left-section {
-      flex: 1; /* 让左侧部分自动适应 */
+      flex: 1;
       min-width: 400px;
-    }
+    }*/
     #uploadForm {
-        width: 100%; /* 让 form 充满 container */
+        width: 90%; /* 让 form 充满 container */
     }
     .image-container {
       display: flex;
@@ -353,15 +352,15 @@
     align-items: center; /* 让所有内容居中 */
     justify-content: center;
   }
-  /* 当 #visualOutputDiv 为空时，强制 .left-section 占据整个父容器 */
+  /* 当 #visualOutputDiv 为空时，强制 .left-section 占据整个父容器 
   #visualOutputDiv:empty {
       display: none;
   }
   #visualOutputDiv:empty + .left-section {
-    grid-column: span 2; /* 让它独占整个行 */
+    grid-column: span 2; 
     justify-self: center;
   }
-  
+  */
   .pdf-btn {
     font-family: 'Avenir';
     display: inline-block;
@@ -446,6 +445,10 @@
         margin-top: auto;  /* 保持推到底部 */
         margin-bottom: 200px;  /* 减少底部留白 */
       }
+      .description {
+        width: calc(100vw - 50px);
+        margin: 0 auto;
+      }
       footer {
         position: fixed;
         bottom: 0;
@@ -454,6 +457,7 @@
         background-color: #fff;
         z-index: 100;
       }
+
     }
   </style>
 </head>
@@ -486,7 +490,7 @@
   <p>Hearing the colors unseen</p>
 
   <div class="container">
-    <div class="left-section">
+    <!-- <div class="left-section"> -->
     <form id="uploadForm" method="post" action="/upload" enctype="multipart/form-data">
       <div>
         <!--
@@ -629,7 +633,7 @@
   
   <!-- 用于显示生成成功或错误信息 -->
   <div id="resultArea" style="margin-top:20px; color:#1C1C1C;"></div>
-</div>  <!--left section-->
+<!-- </div>  left section-->
 
   <!-- 用于显示可视化输出 -->
   <div id="visualOutputDiv"></div>
@@ -637,7 +641,7 @@
 
 <br><br><br>
 
-  <div style="text-align: left;">
+  <div  class="description" style="text-align: left;">
     <p style="font-size: 10px;"><strong>Image Type: </strong>Visual representation of uploaded image.</p>
       <p style="font-size: 10px;"><strong>Music Type: </strong>Select the musical style for the accompaniment. For example, you can choose from Pop, Rock, EDM, Jazz, Waltz, Blues, etc. The chosen style will automatically determine the default time signature and corresponding pattern options.</p>
       <p style="font-size: 10px;"><strong>Time Signature: </strong>Choose the time signature for the piece, such as 4/4, 3/4, 2/4, 6/8, 5/4, 7/8, 9/8, or 12/8. This defines the number of beats per measure and sets the overall rhythmic feel of the accompaniment.</p>
