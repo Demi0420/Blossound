@@ -1385,18 +1385,19 @@ def generate_music(
     deep_root, deep_scale, deep_tempo = decide_deep_params(deep_vec)
     
     # 结合色彩映射（注意 color_to_tonality_new 返回三元组，此处只取第一个元素）
-    color_root = color_to_tonality(h_mean, s_mean, v_mean)
-    color_root2, _, _ = color_to_tonality_new(h_mean, s_mean, v_mean)
-    final_root = color_root2 if random.random() < 0.5 else color_root
-    if random.random() < 0.5:
-        deep_root = final_root
-    print(deep_root, color_root, color_root2)
+    # color_root = color_to_tonality(h_mean, s_mean, v_mean)
+    # color_root2, _, _ = color_to_tonality_new(h_mean, s_mean, v_mean)
+    # final_root = color_root2 if random.random() < 0.5 else color_root
+    # if random.random() < 0.5:
+    #     final_root = deep_root
+    # print(deep_root, color_root, color_root2)
+    final_root = deep_root
     
     # d) 构建 Markov 状态与和弦序列
     states = build_markov_states(deep_scale)
     transition = build_markov_transition(states, s_mean, v_mean)
     chord_seq = generate_chord_sequence(states, transition, length=length)
-    print(f"[INFO] chord_seq= {chord_seq}, root= {deep_root}, scale= {deep_scale}, tempo= {deep_tempo}")
+    print(f"[INFO] chord_seq= {chord_seq}, root= {final_root}, scale= {deep_scale}, tempo= {deep_tempo}")
     
     beats_per_measure = time_signature[0]
     beat_unit_duration = 60.0 / deep_tempo * (4 / time_signature[1])
@@ -1410,7 +1411,7 @@ def generate_music(
         last_interval = None
         hist_notes = (None, None)
         for chord_label in chord_seq:
-            chord_pcs = chord_pcs_in_scale(chord_label, deep_root, deep_scale, use_scriabin=False)
+            chord_pcs = chord_pcs_in_scale(chord_label, final_root, deep_scale, use_scriabin=False)
             r_ms, l_ms, new_int, new_hist = generate_dual_voice_measure(
                 chord_pcs, time_signature=time_signature,
                 last_interval=last_interval, hist_notes=hist_notes
