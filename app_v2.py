@@ -39,6 +39,7 @@ def upload_file():
     接收前端上传的图片文件以及相关参数，并调用 music_gen_deeplearning_advanced.py 生成音乐和可视化文件。
     前端可通过 formData 发送:
       file: 图片文件
+      time_signature: 时间签名参数 (默认(4,4))
       length: 小节数 (默认24)
       method: "dual" 或 "pattern"
       pattern_name: (默认 "alberti_4_4")
@@ -52,6 +53,7 @@ def upload_file():
         return jsonify({"success": False, "error": "No selected file"})
 
     # 读取其他参数（如果没有，就用默认值）
+    time_signature = request.form.get("time_signature", "(4,4)")
     length = request.form.get("length", "24")
     method = request.form.get("method", "dual")  # "dual" or "pattern"
     pattern_name = request.form.get("pattern_name", "alberti_4_4")
@@ -80,6 +82,7 @@ def upload_file():
         subprocess.check_call([
             "python3", "deeplr_music.py",
             "--img_path", input_path,
+            "--time_signature", time_signature,
             "--length", str(length),
             "--method", method,
             "--pattern_name", pattern_name,

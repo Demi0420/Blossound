@@ -487,13 +487,91 @@
         <label for="imageUpload" class="custom-file-upload">
           <b>SELECT IMAGE</b>
         </label>
-        <input type="file" id="imageUpload" accept="image/*" / name="file" required>
+        <input type="file" id="imageUpload" accept="image/*" / name="file">
 
         <div id="previewArea"></div>
         
       </div>
 
       <div class="form-container">
+      
+      <!-- 图片类型选择 -->
+        <div>
+          <label for="image_type">Image Type</label>
+          <select name="image_type" id="image_type">
+            <option value="Pop" selected>Neon | Candy | Dynamic | Party</option>
+            <option value="Rock">Dark | Industrial | Metal Texture | Graffiti</option>
+            <option value="EDM">Cyberpunk | Light Trails | Fluorescent Particles | Glitch Art</option>
+            <option value="Jazz">Vintage | Phonograph | Film Texture | Lazy Mood</option>
+            <option value="Waltz">Spinning | Silk | Crystal Chandelier | Art Nouveau</option>
+            <option value="Romantic Classical">Gothic | Storm | Oil Painting | Quill & Score</option>
+            <option value="Lyrical Folk">Watercolor | Autumn Forest | Handwoven | Faded Photo</option>
+            <option value="March">Symmetry | Formation | Flags | High Contrast</option>
+            <option value="Tango">Red-Black Silhouettes | High Heels | Reflections | Spotlight</option>
+            <option value="Country Dance">Rustic | Wooden | Cowboy | Film Grain</option>
+            <option value="Blues">Rainy Night | Neon | Reflections | Blue-Purple Tone</option>
+            <option value="Celtic">Celtic Knots | Misty Forest | Harp | Medieval Script</option>
+            <option value="Slow Rock">Long Exposure | Light Trails | Shattered Mirror | Night Scene</option>
+            <option value="Certain Classical">Baroque | Pipe Organ | Symmetry | Black-Gold</option>
+            <option value="Progressive Rock">Surreal | Psychedelic | Fractal | Gears</option>
+            <option value="Experimental">Liquid Metal | Soundwave Particles | Negative Image | Minimalist</option>
+            <option value="Film Score">Montage | Backlight | Dramatic | HDR</option>
+            <option value="Balkan">Folk | Embroidery | Fire Dance | Copperware</option>
+            <option value="Experimental Jazz">Twisted | Black & White | Ink Splash | 3D Improvisation</option>
+            <option value="Slip Jig">Watercolor | Spinning | Light Spots | Airy</option>
+            <option value="Hellenic dance">Mediterranean | White-Blue | Pottery | Olive</option>
+            <option value="Turkish dance">Geometric | Copper Lantern | Silk | Pomegranate Red</option>
+            <option value="Rhythm & Blues">Neon | Street | Vinyl | Urban Night</option>
+          </select>
+        </div>
+
+
+      <!-- 音乐类型选择 -->
+      <div>
+        <label for="music_type">Music Type</label>
+        <select name="music_type" id="music_type">
+          <option value="Pop" selected>Pop</option>
+          <option value="Rock">Rock</option>
+          <option value="EDM">EDM</option>
+          <option value="Jazz">Jazz</option>
+          <option value="Waltz">Waltz</option>
+          <option value="Romantic Classical">Romantic Classical</option>
+          <option value="Lyrical Folk">Lyrical Folk</option>
+          <option value="March">March</option>
+          <option value="Tango">Tango</option>
+          <option value="Country Dance">Country Dance</option>
+          <option value="Blues">Blues</option>
+          <option value="Celtic">Celtic</option>
+          <option value="Slow Rock">Slow Rock</option>
+          <option value="Certain Classical">Certain Classical (Bach)</option>
+          <option value="Progressive Rock">Progressive Rock</option>
+          <option value="Experimental">Experimental</option>
+          <option value="Film Score">Film Score</option>
+          <option value="Balkan">Balkan</option>
+          <option value="Experimental Jazz">Experimental Jazz</option>
+          <option value="Slip Jig">Slip Jig</option>
+          <option value="Hellenic dance">Hellenic dance</option>
+          <option value="Turkish dance">Turkish dance</option>
+          <option value="Rhythm & Blues">Rhythm & Blues</option>
+        </select>
+      </div>
+
+
+      
+      <div>
+        <label for="time_signature">Time Signature</label>
+          <select name="time_signature" id="time_signature">
+            <option value="(4,4)">4/4 time</option>
+            <option value="(3,4)">3/4 time</option>
+            <option value="(2,4)">2/4 time</option>
+            <option value="(6,8)">6/8 time</option>
+            <option value="(5,4)">5/4 time</option>
+            <option value="(7,8)">7/8 time</option>
+            <option value="(9,8)">9/8 time</option>
+            <option value="(12,8)">12/8 time</option>
+          </select>
+      </div>
+
       <div>
         <label for="length">Num of Measures</label>
         <!--<input type="number" name="length" id="length" value="24" min="8"> -->
@@ -521,11 +599,10 @@
       <div>
         <label for="pattern_name"">Pattern Name</label>
         <select name="pattern_name" id="pattern_name" disabled>
-          <option value="alberti_4_4">alberti_4_4</option>
-          <option value="boomchick_4_4">boomchick_4_4</option>
-          <option value="waltz_3_4">waltz_3_4</option>
-          <option value="arp_up_4_4">arp_up_4_4</option>
-          <option value="ostinato_16">ostinato_16</option>
+          <option value="pop_4_4">pop_4_4</option>
+          <option value="rock_4_4">rock_4_4</option>
+          <option value="edm_4_4">edm_4_4</option>
+          <option value="jazz_4_4">jazz_4_4</option>
         </select>
       </div>
       <div>
@@ -547,9 +624,22 @@
 
   <!-- 用于显示可视化输出 -->
   <div id="visualOutputDiv"></div>
-  <br><br><br>
 </div> <!--container-->
 
+<br><br><br>
+
+  <div style="text-align: left;">
+    <p style="font-size: 10px;"><strong>Image Type: </strong>Visual representation of uploaded image.</p>
+      <p style="font-size: 10px;"><strong>Music Type: </strong>Select the musical style for the accompaniment. For example, you can choose from Pop, Rock, EDM, Jazz, Waltz, Blues, etc. The chosen style will automatically determine the default time signature and corresponding pattern options.</p>
+      <p style="font-size: 10px;"><strong>Time Signature: </strong>Choose the time signature for the piece, such as 4/4, 3/4, 2/4, 6/8, 5/4, 7/8, 9/8, or 12/8. This defines the number of beats per measure and sets the overall rhythmic feel of the accompaniment.</p>
+      <p style="font-size: 10px;"><strong>Num of Measures: </strong>Specify the total number of measures for the generated accompaniment. This parameter controls the length of the accompaniment (e.g., 4 measures, 8 measures, etc.).</p>
+      <p style="font-size: 10px;"><strong>Method: </strong>Select the method for generating the accompaniment. If you choose "pattern", you will be able to manually select a specific accompaniment pattern from the list below; otherwise, the accompaniment will be generated automatically.</p>
+      <p style="font-size: 10px;"><strong>Pattern Name: </strong>When the Method is set to "pattern", use this dropdown to choose a specific accompaniment pattern (e.g., pop_4_4, rock_4_4, edm_4_4, jazz_4_4, etc.). This field will be enabled only if the Method is "pattern"; otherwise, it remains disabled.</p>
+      <p style="font-size: 10px;"><strong>Left Instrument: </strong>Select the instrument for the left-hand part (or lower voice), typically used for bass or harmonic accompaniment, such as a bass guitar or left-hand piano.</p>
+      <p style="font-size: 10px;"><strong>Right Instrument: </strong>Select the instrument for the right-hand part (or higher voice), typically representing the lead melody or primary accompaniment, such as a lead guitar, piano, or vocal backing.</p>
+  </div>
+
+  <br><br><br>
   <footer>
     © 2025 Blossound. All rights reserved.
   </footer>
@@ -564,6 +654,156 @@
 </div> <!--wrapper-->
   
   <script>
+
+
+    // TYPE_BEATS：音乐类型到拍号的对应关系（由你设定）
+  const TYPE_BEATS = {
+    "Pop": "(4,4)",
+    "Rock": "(4,4)",
+    "EDM": "(4,4)",
+    "Jazz": "(4,4)",
+
+    "Waltz": "(3,4)",
+    "Romantic Classical": "(3,4)",
+    "Lyrical Folk": "(3,4)",
+
+    "March": "(2,4)",
+    "Tango": "(2,4)",
+    "Country Dance": "(2,4)",
+
+    "Blues": "(6,8)",
+    "Celtic": "(6,8)",
+    "Slow Rock": "(6,8)",
+    "Certain Classical": "(6,8)",
+
+    "Progressive Rock": "(5,4)",
+    "Experimental": "(7,8)",
+    "Certain Film Score": "(5,4)",
+
+    "Balkan": "(7,8)",
+    "Experimental Jazz": "(7,8)",
+
+    "Slip Jig": "(9,8)",
+    "Hellenic dance": "(9,8)",
+    "Turkish dance": "(9,8)",
+    "Bach": "(9,8)",
+
+    "Rhythm & Blues": "(12,8)"
+  };
+
+    // 定义不同时间签名下的模式选项
+  const patternOptions = {
+    "(4,4)": [
+      { value: "pop_4_4", text: "pop_4_4" },
+      { value: "rock_4_4", text: "rock_4_4" },
+      { value: "edm_4_4", text: "edm_4_4" },
+      { value: "jazz_4_4", text: "jazz_4_4" }
+    ],
+    "(3,4)": [
+      { value: "waltz_3_4", text: "waltz_3_4" },
+      { value: "romantic_3_4", text: "romantic_3_4" },
+      { value: "folk_3_4", text: "folk_3_4" }
+    ],
+    "(2,4)": [
+      { value: "march_2_4", text: "march_2_4" },
+      { value: "tango_2_4", text: "tango_2_4" },
+      { value: "country_2_4", text: "country_2_4" }
+    ],
+    "(6,8)": [
+      { value: "blues_6_8", text: "blues_6_8" },
+      { value: "celtic_6_8", text: "celtic_6_8" },
+      { value: "slow_rock_6_8", text: "slow_rock_6_8" },
+      { value: "classical_6_8", text: "classical_6_8" }
+    ],
+    "(5,4)": [
+      { value: "prog_5_4", text: "prog_5_4" },
+      { value: "experimental_5_4", text: "experimental_5_4" },
+      { value: "film_5_4", text: "film_5_4" }
+    ],
+    "(7,8)": [
+      { value: "prog_7_8", text: "prog_7_8" },
+      { value: "balkan_7_8", text: "balkan_7_8" },
+      { value: "expjazz_7_8", text: "expjazz_7_8" }
+    ],
+    "(9,8)": [
+      { value: "irish_9_8", text: "irish_9_8" },
+      { value: "greek_9_8", text: "greek_9_8" },
+      { value: "turkish_9_8", text: "turkish_9_8" },
+      { value: "bach_9_8", text: "bach_9_8" }
+    ],
+    "(12,8)": [
+      { value: "rnb_12_8", text: "rnb_12_8" },
+      { value: "slow_rock_12_8", text: "slow_rock_12_8" },
+      { value: "blues_12_8", text: "blues_12_8" },
+      { value: "jazz_12_8", text: "jazz_12_8" }
+    ]
+  };
+
+  // 当 Music Type 改变时，根据 TYPE_BEATS 自动更新 Time Signature
+  document.getElementById("music_type").addEventListener("change", function() {
+    const musicType = this.value; // 例如 "Pop"
+    const newTS = TYPE_BEATS[musicType] || "(4,4)";
+    const tsSelect = document.getElementById("time_signature");
+    tsSelect.value = newTS;
+    // 触发 Time Signature 的 change 事件以更新 Pattern Name 选项
+    tsSelect.dispatchEvent(new Event("change"));
+  });
+
+  // 当 Image Type 改变时，自动更新 Music Type，并触发后续变化
+document.getElementById("image_type").addEventListener("change", function () {
+    let selectedValue = this.value; // 获取选定的图片类型（如 "Pop"）
+    let musicTypeSelect = document.getElementById("music_type");
+
+    // 更新 Music Type
+    musicTypeSelect.value = selectedValue;
+    
+    // 触发 Music Type 的 change 事件，以更新 Time Signature
+    musicTypeSelect.dispatchEvent(new Event("change"));
+});
+
+// 当 Music Type 改变时，根据 TYPE_BEATS 自动更新 Time Signature
+document.getElementById("music_type").addEventListener("change", function () {
+    const musicType = this.value; // 例如 "Pop"
+    const newTS = TYPE_BEATS[musicType] || "(4,4)";
+    const tsSelect = document.getElementById("time_signature");
+
+    // 更新 Time Signature
+    tsSelect.value = newTS;
+
+    // 触发 Time Signature 的 change 事件，以更新 Pattern Name
+    tsSelect.dispatchEvent(new Event("change"));
+});
+
+// 当 Time Signature 改变时，更新 Pattern Name 下拉列表
+document.getElementById('time_signature').addEventListener('change', function() {
+    const ts = this.value; // 例如 "(3,4)"
+    const patternSelect = document.getElementById('pattern_name');
+
+    // 清空现有选项
+    patternSelect.innerHTML = "";
+    
+    // 添加新的 Pattern Name 选项
+    if (patternOptions[ts]) {
+        patternOptions[ts].forEach(function(opt) {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = opt.text;
+            patternSelect.appendChild(option);
+        });
+    }
+
+    // 设置是否启用：只有当 method 为 "pattern" 时启用
+    const methodVal = document.getElementById("method").value;
+    patternSelect.disabled = (methodVal !== "pattern");
+});
+
+// 当 Method 改变时，仅更新 pattern_name 的 enabled 状态（选项保持不变）
+document.getElementById("method").addEventListener("change", function() {
+    const patternSelect = document.getElementById("pattern_name");
+    patternSelect.disabled = (this.value !== "pattern");
+});
+
+
     /* 导航侧边栏的开关 */
     const openSidebar = document.getElementById('openSidebar');
     const closeSidebar = document.getElementById('closeSidebar');
@@ -912,11 +1152,6 @@
       }
     }
 
-    // 切换 method 时启用/禁用 pattern_name 下拉菜单
-    document.getElementById("method").addEventListener("change", function() {
-      const patternSelect = document.getElementById("pattern_name");
-      patternSelect.disabled = (this.value !== "pattern");
-    });
 
     // 页面加载时填充乐器选择菜单
     window.addEventListener("DOMContentLoaded", () => {
@@ -1005,15 +1240,37 @@
 
     // 处理表单提交，保存返回的结果数据，并显示“Show Output”按钮
     const form = document.getElementById("uploadForm");
+
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
 
-      const formData = new FormData(form);
+      const imageInput = document.getElementById("imageUpload");
+      const previewArea = document.getElementById("previewArea");
       const resultArea = document.getElementById("resultArea");
 
-      document.getElementById("resultArea").innerHTML = "";
-      document.getElementById("visualOutputDiv").innerHTML = "";
-      resultArea.innerText = "Processing... Please wait...";
+      const selectImageLabel = document.querySelector(".custom-file-upload"); // 获取 "SELECT IMAGE" 按钮
+
+
+      // 确保清空 resultArea
+      resultArea.innerHTML = "";
+      previewArea.style.color = "red"; // 让错误信息更明显
+      previewArea.style.display = "block"; // 确保可见
+
+      // 检查是否已选择图片
+      if (!imageInput.files || imageInput.files.length === 0) {
+        previewArea.innerHTML = "<b>Please upload image first.</b>"; // 在 resultArea 显示错误信息
+        
+        // ✅ 滚动到 "SELECT IMAGE" 按钮，让其成为页面焦点
+        selectImageLabel.scrollIntoView({ behavior: "smooth", block: "center" });
+
+        return;  // 阻止表单提交
+      }
+
+      resultArea.innerHTML = "<b>Processing... Please wait...</b>";
+      resultArea.style.color = "black"; // 处理中的信息用黑色
+      resultArea.style.display = "block"; 
+
+      const formData = new FormData(form);
 
       try {
         const response = await fetch(`${BACKEND_URL}/upload`, {
@@ -1030,7 +1287,7 @@
           pdfFiles = result.pdfFiles || [];
           mp3Files = result.mp3Files || [];
 
-          resultArea.innerHTML = "Generation success!<br>";
+          resultArea.innerHTML = "<b>Generation success!</b><br>";
           displayVisualOutput(); 
 
           // 添加一个按钮来显示可视化输出（MID/PNG/PDF）
