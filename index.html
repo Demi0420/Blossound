@@ -389,6 +389,11 @@
     text-decoration: underline; /* ✅ 可选：悬停时添加下划线 */
 }
 
+select {
+  width: 100%;
+  box-sizing: border-box; /* 避免内边距或边框影响总宽度 */
+}
+
       /* 针对屏幕宽度较小的设备进行调整 */
       @media only screen and (max-width: 800px) {
       body {
@@ -417,8 +422,11 @@
       }
       .form-container {
         width: 95%; /* 适当设置宽度 */
-        font-size: 14px;
-
+        font-size: 16px;
+      }
+      .form-container select {
+        width: 50%;          /* 让下拉框占满父容器宽度 */
+        box-sizing: border-box; /* 包括内边距和边框在内 */
       }
       .modal-content {
         width: calc(100vw - 100px); /* 手机屏幕宽度减去100px */
@@ -570,7 +578,6 @@
           <option value="Rhythm & Blues">Rhythm & Blues</option>
         </select>
       </div>
-
 
       
       <div>
