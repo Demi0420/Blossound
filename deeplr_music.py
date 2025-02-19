@@ -30,7 +30,6 @@ import hashlib
 
 
 
-
 #########################################################
 # A. 深度特征提取与简单分类/回归 (示例)
 #########################################################
@@ -80,12 +79,16 @@ def decide_deep_params(deep_vec):
       factor = (dv_mean + 2) / 4，tempo = 60 + 80 * factor，
     其中 tempo 范围为 [60, 140] BPM。
     """
+    # print(f"deep_vec: mean={np.mean(deep_vec):.4f}, std={np.std(deep_vec):.4f}")
+
+
     all_keys = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"]
     cluster_centers = {}
     offsets = np.linspace(-0.5, 0.5, len(all_keys))
     for i, k in enumerate(all_keys):
         center = np.random.randn(1280) * 0.1 + offsets[i]
         cluster_centers[k] = center
+        # print(f"{k}: mean={np.mean(cluster_centers[k]):.4f}, std={np.std(cluster_centers[k]):.4f}")
 
     best_key = None
     best_dist = 1e9
@@ -184,6 +187,37 @@ minor_map = {
     "VII": [10, 2, 5]
 }
 
+ALL_MAJOR_KEYS_CHORDS = {
+    "C":  {"I": [0, 4, 7], "ii": [2, 5, 9], "iii": [4, 7, 11], "IV": [5, 9, 0], "V": [7, 11, 2], "vi": [9, 0, 4], "vii°": [11, 2, 5]},
+    "C#": {"I": [1, 5, 8], "ii": [3, 6, 10], "iii": [5, 8, 0], "IV": [6, 10, 1], "V": [8, 0, 3], "vi": [10, 1, 5], "vii°": [0, 3, 6]},
+    "D":  {"I": [2, 6, 9], "ii": [4, 7, 11], "iii": [6, 9, 1], "IV": [7, 11, 2], "V": [9, 1, 4], "vi": [11, 2, 6], "vii°": [1, 4, 7]},
+    "D#": {"I": [3, 7, 10], "ii": [5, 8, 0], "iii": [7, 10, 2], "IV": [8, 0, 3], "V": [10, 2, 5], "vi": [0, 3, 7], "vii°": [2, 5, 8]},
+    "E":  {"I": [4, 8, 11], "ii": [6, 9, 1], "iii": [8, 11, 3], "IV": [9, 1, 4], "V": [11, 3, 6], "vi": [1, 4, 8], "vii°": [3, 6, 9]},
+    "F":  {"I": [5, 9, 0], "ii": [7, 10, 2], "iii": [9, 0, 4], "IV": [10, 2, 5], "V": [0, 4, 7], "vi": [2, 5, 9], "vii°": [4, 7, 10]},
+    "F#": {"I": [6, 10, 1], "ii": [8, 11, 3], "iii": [10, 1, 5], "IV": [11, 3, 6], "V": [1, 5, 8], "vi": [3, 6, 10], "vii°": [5, 8, 11]},
+    "G":  {"I": [7, 11, 2], "ii": [9, 0, 4], "iii": [11, 2, 6], "IV": [0, 4, 7], "V": [2, 6, 9], "vi": [4, 7, 11], "vii°": [6, 9, 0]},
+    "G#": {"I": [8, 0, 3], "ii": [10, 1, 5], "iii": [0, 3, 7], "IV": [1, 5, 8], "V": [3, 7, 10], "vi": [5, 8, 0], "vii°": [7, 10, 1]},
+    "A":  {"I": [9, 1, 4], "ii": [11, 2, 6], "iii": [1, 4, 8], "IV": [2, 6, 9], "V": [4, 8, 11], "vi": [6, 9, 1], "vii°": [8, 11, 2]},
+    "Bb": {"I": [10, 2, 5], "ii": [0, 3, 7], "iii": [2, 5, 9], "IV": [3, 7, 10], "V": [5, 9, 0], "vi": [7, 10, 2], "vii°": [9, 0, 3]},
+    "B":  {"I": [11, 3, 6], "ii": [1, 4, 8], "iii": [3, 6, 10], "IV": [4, 8, 11], "V": [6, 10, 1], "vi": [8, 11, 3], "vii°": [10, 1, 4]},
+}
+
+ALL_MINOR_KEYS_CHORDS = {
+    "A":  {"i": [9, 0, 4], "ii°": [11, 2, 5], "III": [0, 4, 7], "iv": [2, 5, 9], "v": [4, 7, 11], "VI": [5, 9, 0], "VII": [7, 11, 2]},
+    "A#": {"i": [10, 1, 5], "ii°": [0, 3, 6], "III": [1, 5, 8], "iv": [3, 6, 10], "v": [5, 8, 0], "VI": [6, 10, 1], "VII": [8, 0, 3]},
+    "B":  {"i": [11, 2, 6], "ii°": [1, 4, 8], "III": [2, 6, 9], "iv": [4, 8, 11], "v": [6, 9, 1], "VI": [8, 11, 2], "VII": [10, 1, 4]},
+    "C":  {"i": [0, 3, 7], "ii°": [2, 5, 8], "III": [3, 7, 10], "iv": [5, 8, 0], "v": [7, 10, 2], "VI": [8, 0, 3], "VII": [10, 2, 5]},
+    "C#": {"i": [1, 4, 8], "ii°": [3, 6, 9], "III": [4, 8, 11], "iv": [6, 9, 1], "v": [8, 11, 3], "VI": [9, 1, 4], "VII": [11, 3, 6]},
+    "D":  {"i": [2, 5, 9], "ii°": [4, 7, 10], "III": [5, 9, 0], "iv": [7, 10, 2], "v": [9, 0, 4], "VI": [10, 2, 5], "VII": [0, 4, 7]},
+    "D#": {"i": [3, 6, 10], "ii°": [5, 8, 11], "III": [6, 10, 1], "iv": [8, 11, 3], "v": [10, 1, 5], "VI": [11, 3, 6], "VII": [1, 5, 8]},
+    "E":  {"i": [4, 7, 11], "ii°": [6, 9, 0], "III": [7, 11, 2], "iv": [9, 0, 4], "v": [11, 2, 6], "VI": [0, 4, 7], "VII": [2, 6, 9]},
+    "F":  {"i": [5, 8, 0], "ii°": [7, 10, 1], "III": [8, 0, 3], "iv": [10, 1, 5], "v": [0, 3, 7], "VI": [1, 5, 8], "VII": [3, 7, 10]},
+    "F#": {"i": [6, 9, 1], "ii°": [8, 11, 2], "III": [9, 1, 4], "iv": [11, 2, 6], "v": [1, 4, 8], "VI": [2, 6, 9], "VII": [4, 8, 11]},
+    "G":  {"i": [7, 10, 2], "ii°": [9, 0, 3], "III": [10, 2, 5], "iv": [0, 3, 7], "v": [2, 5, 9], "VI": [3, 7, 10], "VII": [5, 9, 0]},
+    "G#": {"i": [8, 11, 3], "ii°": [10, 1, 4], "III": [11, 3, 6], "iv": [1, 4, 8], "v": [3, 6, 10], "VI": [4, 8, 11], "VII": [6, 10, 1]},
+}
+
+
 NOTE_BASE_MAP = {
     "C": 0, "C#": 1, "Db": 1, "D": 2, "D#": 3, "Eb": 3, "E": 4,
     "F": 5, "F#": 6, "Gb": 6, "G": 7, "G#": 8, "Ab": 8,
@@ -214,11 +248,14 @@ def chord_pcs_in_scale(chord_label, root_note, scale_mode="major", use_scriabin=
         return scriabin_sets.get(root_note, [0,6,10,4,9,2])
     else:
         if scale_mode == "major":
-            base_ints = major_map.get(chord_label, [0, 4, 7])
+            chord_map = ALL_MAJOR_KEYS_CHORDS
         else:
-            base_ints = minor_map.get(chord_label, [0, 3, 7])
-        root_val = NOTE_BASE_MAP.get(root_note, 0)
-        return [(root_val + i) % 12 for i in base_ints]
+            chord_map = ALL_MINOR_KEYS_CHORDS
+        
+        if root_note in chord_map and chord_label in chord_map[root_note]:
+            return chord_map[root_note][chord_label]
+        else:
+            return []  # 返回空列表，避免错误
 
 def build_markov_states(scale_mode):
     if scale_mode == "major":
@@ -252,12 +289,14 @@ def generate_chord_sequence(states, transition, length=8):
         current = nxt
     return seq
 
-def generate_dual_voice_measure(chord_pcs,
-                                time_signature=(4,4), 
-                                last_interval=None, 
-                                hist_notes=(None, None), 
-                                max_jump=7, 
-                                step_threshold=2):
+
+def generate_dual_voice_measure_old(chord_pcs,
+                                    chord_label,
+                                    time_signature=(4,4), 
+                                    last_interval=None, 
+                                    hist_notes=(None, None), 
+                                    max_jump=7, 
+                                    step_threshold=2):
     """
     time_signature: 一个元组 (numerator, denominator)，例如 (4,4)、(3,4)、(6,8)、(9,8) 等。
                       注意：对于复合拍（denominator==8 且 numerator 为6、9、12），我们按每组3个八分音符作为一拍来处理，
@@ -266,6 +305,11 @@ def generate_dual_voice_measure(chord_pcs,
       - 避免平行五度/八度；
       - 大跳后接向级进行（要求反向且步幅不超过 2）。
     """
+    """ 优化和弦进行，使用二次属和弦增强吸引力 """
+    # 1️⃣ **尝试加入二次属和弦**
+    # sec_dom_pcs = get_secondary_dominant(chord_label)
+    # if sec_dom_pcs and random.random() <= 1.0:  # 30% 概率使用二次属和弦
+    #     chord_pcs = sec_dom_pcs  
     num, den = time_signature
     if den == 8 and num in (6, 9, 12):
         beats_per_measure = num // 3  # 6/8 → 2 拍, 9/8 → 3 拍, 12/8 → 4 拍
@@ -324,6 +368,147 @@ def generate_dual_voice_measure(chord_pcs,
 
     return right_list, left_list, current_interval, (current_second_last, current_last_r)
 
+def get_secondary_dominant(chord_label, root_note, scale_mode="major"):
+    """
+    根据当前和弦，返回可能的二次属和弦的音程列表，确保符合给定的调性。
+    """
+    if scale_mode == "major":
+        key_chords = ALL_MAJOR_KEYS_CHORDS.get(root_note, {})
+    else:
+        key_chords = ALL_MINOR_KEYS_CHORDS.get(root_note, {})
+
+    # 目标和弦的根音
+    target_chord = key_chords.get(chord_label, None)
+    if target_chord is None:
+        return None  # 没有匹配的和弦
+    
+    # 计算 V7/目标和弦
+    target_root_pc = target_chord[0]  # 目标和弦的根音
+    dominant_root_pc = (target_root_pc + 7) % 12  # 属七和弦的根音（V7）
+
+    # 生成完整的 V7 和弦
+    secondary_dominant = [
+        dominant_root_pc,  # 根音
+        (dominant_root_pc + 4) % 12,  # 大三度
+        (dominant_root_pc + 7) % 12,  # 完全五度
+        (dominant_root_pc + 10) % 12  # 小七度
+    ]
+
+    return secondary_dominant
+
+def generate_rhythm_pattern(time_signature):
+    """
+    生成符合 time_signature 的节奏模式，确保总和等于 time_signature[0]
+    """
+    num, den = time_signature
+    total_duration = num  # 总时长应该等于 num
+    
+    if den == 8 and num in (6, 9, 12):  
+        base_unit = 3  # 复合拍 (6/8, 9/8, 12/8)
+    else:
+        base_unit = 1  # 单拍 (4/4, 3/4, 5/4)
+    
+    # 确保节奏模式总时长等于 time_signature[0]
+    while True:
+        rhythm_pattern = []
+        remaining_duration = total_duration
+        
+        while remaining_duration > 0:
+            if remaining_duration <= base_unit:
+                rhythm_pattern.append(remaining_duration)
+                break
+            max_note = min(base_unit + 1, remaining_duration)  # 限制最大值
+            note_duration = random.randint(1, max_note)
+            rhythm_pattern.append(note_duration)
+            remaining_duration -= note_duration
+        
+        if sum(rhythm_pattern) == total_duration:
+            return rhythm_pattern
+
+def generate_dual_voice_measure(chord_pcs, 
+                                chord_label, 
+                                root_note,
+                                scale_mode="major",
+                                time_signature=(4, 4), 
+                                last_interval=None, 
+                                hist_notes=(None, None), 
+                                max_jump=7, 
+                                step_threshold=2):
+    """
+    Generates an optimized melody using secondary dominants, passing tones, rhythmic patterns, and directional control.
+    Ensures the melody follows the given time signature.
+    """
+    # Attempt to add a secondary dominant chord
+    # ✅ 1️⃣ 确保二次属和弦符合当前调性
+    sec_dom_pcs = get_secondary_dominant(chord_label, root_note, scale_mode)
+    if sec_dom_pcs and random.random() < 0.0:
+        valid_notes = set(sum(ALL_MAJOR_KEYS_CHORDS.get(root_note, {}).values(), []))
+        # 过滤掉不属于当前调性的二次属和弦音符
+        chord_pcs = [pc for pc in sec_dom_pcs if pc in valid_notes]
+
+    # ✅ 2️⃣ 确保 scale_notes 包含当前调性的所有和弦音符
+    if scale_mode == "major":
+        valid_notes = set(sum(ALL_MAJOR_KEYS_CHORDS[root_note].values(), []))  # 获取所有B大调的音符
+    else:
+        valid_notes = set(sum(ALL_MINOR_KEYS_CHORDS[root_note].values(), []))  # 获取所有B小调的音符
+
+    scale_notes = [pc for pc in chord_pcs if pc in valid_notes]
+
+    print("[DEBUG] scale_notes: ", scale_notes)
+
+    # Generate rhythm pattern dynamically
+    rhythm_pattern = generate_rhythm_pattern(time_signature)
+    print("[DEBUG] rhythm_pattern: ", rhythm_pattern)
+    expected_notes_per_measure = sum(rhythm_pattern)
+
+    # Initialize melody lists
+    right_hand = []  # Melody (higher voice)
+    left_hand = []   # Bassline (lower voice)
+    second_last_r, last_r = hist_notes
+    bass_pc = chord_pcs[0]
+    bass_midi = 48 + bass_pc  # Keep bass stable
+    
+    current_interval = last_interval
+    current_second_last = second_last_r
+    current_last_r = last_r
+
+    for duration in rhythm_pattern:  # 确保每个音符匹配节奏模式
+        trials = 0
+        candidate_midi = None
+        
+        while trials < 30:
+            if current_last_r and random.random() < 0.7:
+                stepwise_choices = [(current_last_r + 2) % 12, (current_last_r - 2) % 12]
+                stepwise_choices = [n for n in stepwise_choices if n in scale_notes]
+                candidate_pc = random.choice(stepwise_choices) if stepwise_choices else random.choice(scale_notes)
+            else:
+                candidate_pc = random.choice(scale_notes)
+
+            candidate_midi = 60 + candidate_pc  # Map pitch class to MIDI note
+            new_interval = (bass_midi, candidate_midi)
+
+            # Avoid parallel fifths and octaves
+            if current_interval and last_interval:
+                if abs(new_interval[1] - new_interval[0]) in (7, 12) and abs(last_interval[1] - last_interval[0]) in (7, 12):
+                    trials += 1
+                    continue  # Try again if parallel 5ths/8ves detected
+            
+            break  
+        
+        if candidate_midi is None:
+            candidate_midi = bass_midi + 12  # Default fallback
+        
+        # 根据节奏模式的数值分配音符
+        for _ in range(duration):
+            right_hand.append(candidate_midi)
+            left_hand.append(bass_midi)
+        
+        # Update previous note references
+        current_second_last = current_last_r
+        current_last_r = candidate_midi
+        current_interval = (bass_midi, candidate_midi)
+    
+    return right_hand, left_hand, current_interval, (current_second_last, current_last_r)
 
 #########################################################
 # E. 伴奏模式相关函数
@@ -716,9 +901,16 @@ ACCOMPANIMENT_PATTERNS_OLD = {
 }
 
 
-
-def pick_note_from_chord(chord_pcs_sorted, note_position="lowest", lowestBass=36, highestBass=60, 
-                         velocity=80, prev_note=None, max_jump=7, cyc_idx_dict=None):
+def pick_note_from_chord(chord_pcs_sorted, 
+                         root_note, 
+                         scale_mode="major",
+                         note_position="lowest", 
+                         lowestBass=36, 
+                         highestBass=60, 
+                         velocity=80, 
+                         prev_note=None, 
+                         max_jump=7, 
+                         cyc_idx_dict=None):
     """
     根据 note_position 从 chord_pcs_sorted 中选择一个音符，并保证生成的音符固定在一个八度内，
     同时检查与前一个左声部音符的跳跃幅度不超过 max_jump，避免出现突然的高八度。
@@ -733,11 +925,29 @@ def pick_note_from_chord(chord_pcs_sorted, note_position="lowest", lowestBass=36
       - max_jump: 允许的最大跳跃音程（半音数）。
       - cyc_idx_dict: 用于 "next" 模式循环索引。
     """
+
+    # **1️⃣ 获取当前调性内的合法音符**
+    if scale_mode == "major":
+        valid_scale_notes = set(sum(ALL_MAJOR_KEYS_CHORDS.get(root_note, {}).values(), []))
+    else:
+        valid_scale_notes = set(sum(ALL_MINOR_KEYS_CHORDS.get(root_note, {}).values(), []))
+
+    # **确保和弦音符属于该调性**
+    chord_pcs_sorted = [pc for pc in chord_pcs_sorted if pc in valid_scale_notes]
+    if not chord_pcs_sorted:
+        root_pc = NOTE_BASE_MAP.get(root_note, 0)  # 获取 root note 的音高类
+        chord_pcs_sorted = [root_pc]  # 默认返回主音
+
     # 固定使用的八度：例如设为 3，即构造音符时用 12*(3+1)=48 作为基础，这样生成的音在 [48, 59] 内
     fixed_octv = 3
 
     def build_candidate(pc):
-        octave = (prev_note // 12) if prev_note else fixed_octv + 1  # 计算出一个合理的八度
+        """ 生成 MIDI 音高，并确保音符属于当前调性。"""
+        if pc not in valid_scale_notes:
+            print(f"Warning: {pc} 不属于 {root_note} {scale_mode} 调，将替换为主音！")
+            pc = NOTE_BASE_MAP[root_note]  # 强制转换为主音
+        
+        octave = (prev_note // 12) if prev_note else fixed_octv + 1
         return (octave * 12) + (pc % 12)
 
     def get_base_pitch():
@@ -787,6 +997,7 @@ def pick_note_from_chord(chord_pcs_sorted, note_position="lowest", lowestBass=36
             # 默认返回最低音
             return chord_pcs_sorted[0]
     
+    # **4️⃣ 生成候选音符**
     candidate = None
     trials = 0
     while trials < 30:
@@ -797,34 +1008,31 @@ def pick_note_from_chord(chord_pcs_sorted, note_position="lowest", lowestBass=36
             trials += 1
             continue
 
-        # 检查与前一个音符的跳跃幅度，若已有前音则要求不超过 max_jump
+        # **检查跳跃幅度**
         if prev_note is not None:
-            if abs(cand - prev_note) > max_jump or (cand // 12 != prev_note // 12):
+            if abs(cand - prev_note) > max_jump:
                 trials += 1
                 continue
 
-        # 可在这里加入其它规则检查，例如避免与右声部产生平行完美（需传入对应右声部信息）
         candidate = cand
         break
 
-    # 如果多次尝试后没有找到合适的候选，则采用回退策略：
+    # **5️⃣ 回退策略**
     if candidate is None:
-        # 在固定八度内，对所有和弦音计算候选值
         possible = [build_candidate(pc) for pc in chord_pcs_sorted if lowestBass <= build_candidate(pc) <= highestBass]
         if prev_note is not None and possible:
-            # 选择与 prev_note 差距最小的候选
-            # candidate = min(possible, key=lambda x: abs(x - prev_note))
-            candidate = min(possible, key=lambda x: (abs(x - prev_note), abs((x // 12) - (prev_note // 12))))
+            candidate = min(possible, key=lambda x: abs(x - prev_note))
         elif possible:
             candidate = possible[0]
         else:
-            # 如果所有候选都不合适，则直接返回固定八度内最低的音
             candidate = build_candidate(chord_pcs_sorted[0])
     
     return ([candidate], [velocity])
 
 def generate_accompaniment(
     chord_pcs_sorted, 
+    root_note,
+    scale_mode,
     pattern_name,
     start_time=0.0,
     time_signature=(4,4),
@@ -885,6 +1093,8 @@ def generate_accompaniment(
 
         pitches, velocities = pick_note_from_chord(
             chord_pcs_sorted,
+            root_note,
+            scale_mode,
             note_position=note_position,
             lowestBass=lowestBass,
             highestBass=highestBass,
@@ -1386,12 +1596,12 @@ def generate_music(
     
     # 结合色彩映射（注意 color_to_tonality_new 返回三元组，此处只取第一个元素）
     # color_root = color_to_tonality(h_mean, s_mean, v_mean)
-    # color_root2, _, _ = color_to_tonality_new(h_mean, s_mean, v_mean)
+    color_root2, _, _ = color_to_tonality_new(h_mean, s_mean, v_mean)
     # final_root = color_root2 if random.random() < 0.5 else color_root
     # if random.random() < 0.5:
     #     final_root = deep_root
-    # print(deep_root, color_root, color_root2)
-    final_root = deep_root
+    print(deep_root, color_root2)
+    final_root = color_root2
     
     # d) 构建 Markov 状态与和弦序列
     states = build_markov_states(deep_scale)
@@ -1399,6 +1609,11 @@ def generate_music(
     chord_seq = generate_chord_sequence(states, transition, length=length)
     print(f"[INFO] chord_seq= {chord_seq}, root= {final_root}, scale= {deep_scale}, tempo= {deep_tempo}")
     
+    if deep_scale == "major":
+        valid_scale_notes = set(sum(ALL_MAJOR_KEYS_CHORDS.get(final_root, {}).values(), []))
+    else:
+        valid_scale_notes = set(sum(ALL_MINOR_KEYS_CHORDS.get(final_root, {}).values(), []))
+
     beats_per_measure = time_signature[0]
     beat_unit_duration = 60.0 / deep_tempo * (4 / time_signature[1])
     bar_duration = beats_per_measure * beat_unit_duration
@@ -1413,7 +1628,7 @@ def generate_music(
         for chord_label in chord_seq:
             chord_pcs = chord_pcs_in_scale(chord_label, final_root, deep_scale, use_scriabin=False)
             r_ms, l_ms, new_int, new_hist = generate_dual_voice_measure(
-                chord_pcs, time_signature=time_signature,
+                chord_pcs, chord_label, final_root, deep_scale, time_signature=time_signature,
                 last_interval=last_interval, hist_notes=hist_notes
             )
             right_all.append(r_ms)
@@ -1429,10 +1644,10 @@ def generate_music(
         current_time = 0.0
         cyc_dict = {}
         for chord_label in chord_seq:
-            chord_pcs = chord_pcs_in_scale(chord_label, deep_root, deep_scale, use_scriabin=False)
+            chord_pcs = chord_pcs_in_scale(chord_label, final_root, deep_scale, use_scriabin=False)
             # 右声部对位生成
             r_ms, _, new_int_r, new_hist_r = generate_dual_voice_measure(
-                chord_pcs, time_signature=time_signature,
+                chord_pcs, chord_label, final_root, deep_scale, time_signature=time_signature,
                 last_interval=last_interval_r,
                 hist_notes=hist_notes_r
             )
@@ -1444,19 +1659,21 @@ def generate_music(
             # 左声部使用伴奏模式生成
             events = generate_accompaniment(
                 chord_pcs_sorted=chord_pcs,
+                root_note=final_root,
+                scale_mode=deep_scale,
                 pattern_name=pattern_name,
                 start_time=current_time,
                 time_signature=time_signature,
-                # beats_per_bar=beats,
                 tempo=deep_tempo,
                 lowestBass=36,
                 highestBass=60,
                 velocityBase=80,
                 cyc_idx_dict=cyc_dict
             )
+            print(f"DEBUG: Generated events = {events}")
             current_time += bar_duration
-            # 将每小节 events 简化为 4 拍音高列表（这里只取每拍第一个事件的音符）
-            measure_pitch_list = [60] * beats_per_measure
+            root_midi = NOTE_BASE_MAP.get(final_root, 60) + 12 * 4  # 选择当前调性的主音，并设定在 4 组八度
+            measure_pitch_list = [root_midi] * beats_per_measure  # 使用正确的主音填充
             for (on_t, off_t, pitches, velocities) in events:
                 rel_time = on_t - (current_time - bar_duration)
                 beat_idx = int(rel_time // beat_unit_duration)
@@ -1465,7 +1682,11 @@ def generate_music(
                 if beat_idx >= beats_per_measure:
                     beat_idx = beats_per_measure - 1
                 if pitches:
+                    # **确保音符符合调性**
+                    if pitches[0] % 12 not in valid_scale_notes:
+                        print(f"Warning: {pitches[0]} 不在 {final_root} {deep_scale}，可能需要检查！")
                     measure_pitch_list[beat_idx] = pitches[0]
+            print(f"DEBUG: measure_pitch_list = {measure_pitch_list}")
             left_all.append(measure_pitch_list)
         
         """
@@ -1698,7 +1919,8 @@ def generate_music(
 
 
 
-    lily_root = convert_key_for_lily(deep_root)
+    lily_root = convert_key_for_lily(final_root)
+    print("[DEBUG] lily_root: ", lily_root, "deep_scale: ", deep_scale)
 
     lily_content = f"""\\version "2.24.1"
     \\header {{
@@ -1767,7 +1989,7 @@ if __name__ == "__main__":
     parser.add_argument("--length", type=int, default=24, help="Number of measures (chord sequence length).")
     parser.add_argument("--method", type=str, choices=["dual", "pattern"], default="dual",
                         help="Generation method: 'dual' for dual-voice counterpoint, 'pattern' for accompaniment pattern mode.")
-    parser.add_argument("--pattern_name", type=str, default="alberti_4_4",
+    parser.add_argument("--pattern_name", type=str, default="pop_4_4",
                         help="When method is 'pattern', the accompaniment pattern name to use.")
     parser.add_argument("--left_program_index", type=int, default=32,
                         help="MIDI program index for the left-hand instrument (e.g., 32 for Acoustic Bass).")
