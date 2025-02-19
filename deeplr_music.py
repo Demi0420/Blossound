@@ -1400,6 +1400,11 @@ def from_midi_to_mp3(midi_file):
     ], check=True)
 
     print(f"已生成 MP3 文件: {mp3_file}")
+    if os.path.exists(wav_file):  # 确保文件存在
+        os.remove(wav_file)
+        print(f"{wav_file} 已被删除")
+    else:
+        print(f"{wav_file} 不存在")
 
 def convert_to_type0(pretty_midi_obj, output_filename, left_program_index, right_program_index):
     """
